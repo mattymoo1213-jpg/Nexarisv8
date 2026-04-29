@@ -1,79 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexaris</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexaris</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: black;
-      font-family: Arial;
-      color: #00ffcc;
-      font-size: 22px; /* 🔥 bigger base text */
-    }
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: black;
+  font-family: Arial;
+  color: #00ffcc;
+  font-size: 22px;
+}
 
-    body {
-      display: flex;
-      flex-direction: column;
-    }
+body {
+  display: flex;
+  flex-direction: column;
+}
 
-    h1 {
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-      font-size: 36px;
-      border-bottom: 1px solid #00ffcc33;
-    }
+h1 {
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  font-size: 36px;
+}
 
-    #output {
-      flex: 1;
-      padding: 20px;
-      font-size: 24px; /* 🔥 bigger chat text */
-      line-height: 1.6;
-      overflow-y: auto;
-    }
+#output {
+  flex: 1;
+  padding: 20px;
+  font-size: 24px;
+  line-height: 1.6;
+  overflow-y: auto;
+}
 
-    .inputArea {
-      display: flex;
-      padding: 10px;
-    }
+.inputArea {
+  display: flex;
+  padding: 10px;
+}
 
-    input {
-      flex: 1;
-      padding: 18px;
-      font-size: 22px;
-      border: none;
-      outline: none;
-    }
+input {
+  flex: 1;
+  padding: 18px;
+  font-size: 22px;
+}
 
-    button {
-      padding: 18px 22px;
-      font-size: 20px;
-      background: #00ffcc;
-      border: none;
-      font-weight: bold;
-    }
-  </style>
+button {
+  padding: 18px;
+  font-size: 20px;
+  background: #00ffcc;
+  border: none;
+}
+</style>
 </head>
 
 <body>
 
 <h1>NEXARIS</h1>
-
-<div id="output">System online.</div>
+<div id="output">System ready.</div>
 
 <div class="inputArea">
-  <input id="input" placeholder="Ask or tell Nexaris something..." />
-  <button onclick="ask()">Send</button>
+<input id="input" placeholder="Ask anything..." />
+<button onclick="ask()">Send</button>
 </div>
 
 <script>
 let userName = localStorage.getItem("nexaris_name");
 
-// 🎤 Voice (Aussie if available)
+// 🎤 Voice
 function speak(text) {
   let msg = new SpeechSynthesisUtterance(text);
   let voices = speechSynthesis.getVoices();
@@ -86,14 +81,17 @@ function speak(text) {
 
   msg.rate = 1;
   msg.pitch = 1;
+
   speechSynthesis.speak(msg);
 }
 
-// 🧠 Smarter response system
-function ask() {
+// 🧠 Smart answering system
+async function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
   let lower = input.toLowerCase();
+
+  output.innerText = "Thinking...";
 
   let response = "";
 
@@ -104,48 +102,32 @@ function ask() {
     response = "Noted. Your name is " + userName + ".";
   }
 
-  // GREETING
-  else if (lower.includes("hello") || lower.includes("hi")) {
-    response = userName
-      ? "Hello " + userName + "."
-      : "Hello. You can tell me your name if you want.";
+  // SIMPLE RESPONSES
+  else if (lower.includes("hello")) {
+    response = userName ? "Hello " + userName + "." : "Hello.";
   }
 
-  // WHO ARE YOU
   else if (lower.includes("who are you")) {
-    response = "I am Nexaris, an assistant designed to answer questions and interact conversationally.";
+    response = "I am Nexaris, an assistant designed to answer questions and provide information.";
   }
 
-  // TIME
-  else if (lower.includes("time")) {
-    response = "The current time is " + new Date().toLocaleTimeString() + ".";
-  }
-
-  // SIMPLE MATH (basic parser)
-  else if (lower.match(/[\d+\-*/]/)) {
-    try {
-      let result = eval(input);
-      response = "That equals " + result + ".";
-    } catch {
-      response = "I couldn't calculate that.";
-    }
-  }
-
-  // BASIC FACT MODE (not full Wikipedia, but informative)
-  else if (lower.includes("what is") || lower.includes("who is")) {
-    response = "I don’t have full internet knowledge yet, but I can explain if you rephrase or give more detail.";
-  }
-
-  // COMMAND STYLE
-  else if (lower.startsWith("do ") || lower.startsWith("explain ")) {
-    response = "Understood. I will try to process that: " + input;
-  }
-
-  // DEFAULT BALANCED RESPONSE
   else {
-    response = userName
-      ? userName + ", I understand your input. Provide more detail so I can give a better answer."
-      : "I understand. Provide more detail so I can respond accurately.";
+    // 🌐 REAL ANSWER FETCH (Wikipedia)
+    try {
+      let url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(input);
+      let res = await fetch(url);
+      let data = await res.json();
+
+      if (data.extract) {
+        // ✨ clean shorter response
+        response = data.extract.split(". ").slice(0, 2).join(". ") + ".";
+      } else {
+        response = "No clear answer found. Try rephrasing.";
+      }
+
+    } catch {
+      response = "I could not retrieve information.";
+    }
   }
 
   output.innerText = response;
