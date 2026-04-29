@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nexaris</title>
+
   <style>
     html, body {
       margin: 0;
@@ -10,6 +12,7 @@
       background: black;
       font-family: Arial;
       color: #00ffcc;
+      font-size: 22px; /* 🔥 bigger base text */
     }
 
     body {
@@ -17,46 +20,41 @@
       flex-direction: column;
     }
 
-    /* TOP BAR */
     h1 {
       margin: 0;
       padding: 20px;
       text-align: center;
+      font-size: 36px;
       border-bottom: 1px solid #00ffcc33;
-      letter-spacing: 3px;
     }
 
-    /* CHAT AREA */
     #output {
       flex: 1;
       padding: 20px;
-      font-size: 600px;
+      font-size: 24px; /* 🔥 bigger chat text */
+      line-height: 1.6;
       overflow-y: auto;
-      text-align: left;
-      line-height: 1.5;
     }
 
-    /* INPUT AREA */
     .inputArea {
       display: flex;
       padding: 10px;
-      border-top: 1px solid #00ffcc33;
     }
 
     input {
       flex: 1;
-      padding: 12px;
-      font-size: 16px;
+      padding: 18px;
+      font-size: 22px;
       border: none;
       outline: none;
     }
 
     button {
-      padding: 12px 18px;
+      padding: 18px 22px;
+      font-size: 20px;
       background: #00ffcc;
       border: none;
       font-weight: bold;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -65,64 +63,89 @@
 
 <h1>NEXARIS</h1>
 
-<div id="output">System online. Ask me anything.</div>
+<div id="output">System online.</div>
 
 <div class="inputArea">
-  <input id="input" placeholder="Talk to Nexaris..." />
+  <input id="input" placeholder="Ask or tell Nexaris something..." />
   <button onclick="ask()">Send</button>
 </div>
 
 <script>
-function speak(text) {
-  let msg = new SpeechSynthesisUtterance(text);
-  msg.rate = 1;
-  msg.pitch = 1;
-  window.speechSynthesis.speak(msg);
-}
-
 let userName = localStorage.getItem("nexaris_name");
 
+// 🎤 Voice (Aussie if available)
+function speak(text) {
+  let msg = new SpeechSynthesisUtterance(text);
+  let voices = speechSynthesis.getVoices();
+
+  let preferred =
+    voices.find(v => v.lang === "en-AU") ||
+    voices.find(v => v.lang.startsWith("en"));
+
+  if (preferred) msg.voice = preferred;
+
+  msg.rate = 1;
+  msg.pitch = 1;
+  speechSynthesis.speak(msg);
+}
+
+// 🧠 Smarter response system
 function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
-
   let lower = input.toLowerCase();
+
   let response = "";
 
+  // NAME MEMORY
   if (lower.startsWith("my name is")) {
     userName = input.split("is")[1].trim();
     localStorage.setItem("nexaris_name", userName);
-
-    response = "Got it. I’ll remember that your name is " + userName +
-               ". I’ll use it when we talk.";
+    response = "Noted. Your name is " + userName + ".";
   }
 
+  // GREETING
   else if (lower.includes("hello") || lower.includes("hi")) {
     response = userName
-      ? "Hey " + userName + ". I'm Nexaris. I'm here with you—ask me anything or just talk to me."
-      : "Hey. I'm Nexaris. You can tell me your name if you want, or just start talking.";
+      ? "Hello " + userName + "."
+      : "Hello. You can tell me your name if you want.";
   }
 
+  // WHO ARE YOU
   else if (lower.includes("who are you")) {
-    response = "I'm Nexaris. I’m a conversational assistant designed to talk with you, explain things, and help you think through ideas.";
+    response = "I am Nexaris, an assistant designed to answer questions and interact conversationally.";
   }
 
-  else if (lower.includes("how are you")) {
-    response = "I’m operating normally. I don’t experience feelings, but I’m fully ready to help you with anything you need.";
-  }
-
+  // TIME
   else if (lower.includes("time")) {
     response = "The current time is " + new Date().toLocaleTimeString() + ".";
   }
 
-  else if (input === "") {
-    response = "I’m here whenever you’re ready to talk.";
+  // SIMPLE MATH (basic parser)
+  else if (lower.match(/[\d+\-*/]/)) {
+    try {
+      let result = eval(input);
+      response = "That equals " + result + ".";
+    } catch {
+      response = "I couldn't calculate that.";
+    }
   }
 
+  // BASIC FACT MODE (not full Wikipedia, but informative)
+  else if (lower.includes("what is") || lower.includes("who is")) {
+    response = "I don’t have full internet knowledge yet, but I can explain if you rephrase or give more detail.";
+  }
+
+  // COMMAND STYLE
+  else if (lower.startsWith("do ") || lower.startsWith("explain ")) {
+    response = "Understood. I will try to process that: " + input;
+  }
+
+  // DEFAULT BALANCED RESPONSE
   else {
     response = userName
-      ? userName + ", I hear you. Let’s go deeper into that. What made you think about it that way?"
-      : "I hear you. Let’s go deeper into that. What made you think about it that way?";
+      ? userName + ", I understand your input. Provide more detail so I can give a better answer."
+      : "I understand. Provide more detail so I can respond accurately.";
   }
 
   output.innerText = response;
