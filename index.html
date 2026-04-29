@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexaris</title>
+<title>Nexaris AI</title>
 
 <style>
 html, body {
@@ -21,7 +21,7 @@ body {
 
 h1 {
   text-align: center;
-  font-size: 36px;
+  font-size: 34px;
   padding: 15px;
   border-bottom: 1px solid #00ffcc33;
 }
@@ -37,20 +37,17 @@ h1 {
 .inputArea {
   display: flex;
   padding: 10px;
-  border-top: 1px solid #00ffcc33;
+  gap: 8px;
 }
 
 input {
   flex: 1;
-  padding: 18px;
-  font-size: 22px;
-  border: none;
-  outline: none;
+  padding: 16px;
+  font-size: 20px;
 }
 
 button {
-  padding: 18px 22px;
-  font-size: 20px;
+  padding: 16px;
   background: #00ffcc;
   border: none;
   font-weight: bold;
@@ -72,15 +69,12 @@ button {
 <script>
 let userName = localStorage.getItem("nexaris_name");
 
-// 🎤 Voice system
+// 🔊 Voice
 function speak(text) {
   let msg = new SpeechSynthesisUtterance(text);
-
   let voices = speechSynthesis.getVoices();
 
-  let voice =
-    voices.find(v => v.lang.startsWith("en"));
-
+  let voice = voices.find(v => v.lang.startsWith("en"));
   if (voice) msg.voice = voice;
 
   msg.rate = 1;
@@ -89,7 +83,7 @@ function speak(text) {
   speechSynthesis.speak(msg);
 }
 
-// 🌐 Wikipedia fetch (main brain)
+// 🌐 Wikipedia lookup
 async function wiki(query) {
   try {
     let url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(query);
@@ -103,41 +97,68 @@ async function wiki(query) {
   return null;
 }
 
-// 🧠 Core AI logic
+// 🧠 smart bird/explanation helper
+function adviceMode(input) {
+  let lower = input.toLowerCase();
+
+  if (lower.includes("bird") && lower.includes("cage")) {
+    return "Most small birds need a cage at least 18–24 inches wide, but bigger is always better so they can fly.";
+  }
+
+  if (lower.includes("how big should")) {
+    return "It depends on the animal or object. Tell me what you're referring to and I’ll give a proper size.";
+  }
+
+  return null;
+}
+
+// ➕ math handler
+function mathCheck(input) {
+  if (/^[0-9+\-*/(). ]+$/.test(input)) {
+    try {
+      let result = Function("return " + input)();
+      return "That equals " + result;
+    } catch {
+      return "I couldn’t calculate that.";
+    }
+  }
+  return null;
+}
+
+// 🧠 main brain
 async function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
-  let lower = input.toLowerCase();
 
   output.innerText = "Thinking...";
 
   let response = "";
 
   // 👤 memory
-  if (lower.startsWith("my name is")) {
+  if (input.toLowerCase().startsWith("my name is")) {
     userName = input.split("is")[1].trim();
     localStorage.setItem("nexaris_name", userName);
-    response = "Got it. I’ll remember your name is " + userName + ".";
+    response = "Got it. I’ll remember your name is " + userName;
   }
 
-  // 👋 greeting
-  else if (lower.includes("hello") || lower.includes("hi")) {
-    response = userName ? "Hello " + userName + "." : "Hello.";
+  // ➕ math first
+  else if (mathCheck(input)) {
+    response = mathCheck(input);
   }
 
-  // ⏰ time
-  else if (lower.includes("time")) {
-    response = "It is " + new Date().toLocaleTimeString() + ".";
+  // 🧠 advice mode (bird cages etc.)
+  else if (adviceMode(input)) {
+    response = adviceMode(input);
   }
 
-  // 🌐 wiki answers
+  // 🌐 Wikipedia fallback
   else {
     let wikiAnswer = await wiki(input);
 
     if (wikiAnswer) {
       response = wikiAnswer;
     } else {
-      response = "I don’t have a direct answer for that. Try being more specific.";
+      response = "I couldn’t find a clear answer. Try being more specific.";
     }
   }
 
