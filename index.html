@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Nexaris</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: black;
+      font-family: Arial;
+      color: #00ffcc;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP BAR */
+    h1 {
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #00ffcc33;
+      letter-spacing: 3px;
+    }
+
+    /* CHAT AREA */
+    #output {
+      flex: 1;
+      padding: 20px;
+      font-size: 18px;
+      overflow-y: auto;
+      text-align: left;
+      line-height: 1.5;
+    }
+
+    /* INPUT AREA */
+    .inputArea {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #00ffcc33;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      padding: 12px 18px;
+      background: #00ffcc;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>NEXARIS</h1>
+
+<div id="output">System online. Ask me anything.</div>
+
+<div class="inputArea">
+  <input id="input" placeholder="Talk to Nexaris..." />
+  <button onclick="ask()">Send</button>
+</div>
+
+<script>
+function speak(text) {
+  let msg = new SpeechSynthesisUtterance(text);
+  msg.rate = 1;
+  msg.pitch = 1;
+  window.speechSynthesis.speak(msg);
+}
+
+let userName = localStorage.getItem("nexaris_name");
+
+function ask() {
+  let input = document.getElementById("input").value.trim();
+  let output = document.getElementById("output");
+
+  let lower = input.toLowerCase();
+  let response = "";
+
+  if (lower.startsWith("my name is")) {
+    userName = input.split("is")[1].trim();
+    localStorage.setItem("nexaris_name", userName);
+
+    response = "Got it. I’ll remember that your name is " + userName +
+               ". I’ll use it when we talk.";
+  }
+
+  else if (lower.includes("hello") || lower.includes("hi")) {
+    response = userName
+      ? "Hey " + userName + ". I'm Nexaris. I'm here with you—ask me anything or just talk to me."
+      : "Hey. I'm Nexaris. You can tell me your name if you want, or just start talking.";
+  }
+
+  else if (lower.includes("who are you")) {
+    response = "I'm Nexaris. I’m a conversational assistant designed to talk with you, explain things, and help you think through ideas.";
+  }
+
+  else if (lower.includes("how are you")) {
+    response = "I’m operating normally. I don’t experience feelings, but I’m fully ready to help you with anything you need.";
+  }
+
+  else if (lower.includes("time")) {
+    response = "The current time is " + new Date().toLocaleTimeString() + ".";
+  }
+
+  else if (input === "") {
+    response = "I’m here whenever you’re ready to talk.";
+  }
+
+  else {
+    response = userName
+      ? userName + ", I hear you. Let’s go deeper into that. What made you think about it that way?"
+      : "I hear you. Let’s go deeper into that. What made you think about it that way?";
+  }
+
+  output.innerText = response;
+  speak(response);
+}
+</script>
+
+</body>
+</html>
