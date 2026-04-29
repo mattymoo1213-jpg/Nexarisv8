@@ -7,7 +7,6 @@
 <style>
 html, body {
   margin: 0;
-  padding: 0;
   height: 100%;
   background: black;
   font-family: Arial;
@@ -21,16 +20,16 @@ body {
 }
 
 h1 {
-  margin: 0;
-  padding: 20px;
   text-align: center;
   font-size: 36px;
+  padding: 15px;
+  border-bottom: 1px solid #00ffcc33;
 }
 
 #output {
   flex: 1;
   padding: 20px;
-  font-size: 24px;
+  font-size: 26px;
   line-height: 1.6;
   overflow-y: auto;
 }
@@ -38,19 +37,23 @@ h1 {
 .inputArea {
   display: flex;
   padding: 10px;
+  border-top: 1px solid #00ffcc33;
 }
 
 input {
   flex: 1;
   padding: 18px;
   font-size: 22px;
+  border: none;
+  outline: none;
 }
 
 button {
-  padding: 18px;
+  padding: 18px 22px;
   font-size: 20px;
   background: #00ffcc;
   border: none;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -58,6 +61,7 @@ button {
 <body>
 
 <h1>NEXARIS</h1>
+
 <div id="output">System ready.</div>
 
 <div class="inputArea">
@@ -68,16 +72,16 @@ button {
 <script>
 let userName = localStorage.getItem("nexaris_name");
 
-// 🎤 Voice
+// 🎤 Voice system
 function speak(text) {
   let msg = new SpeechSynthesisUtterance(text);
+
   let voices = speechSynthesis.getVoices();
 
-  let preferred =
-    voices.find(v => v.lang === "en-AU") ||
+  let voice =
     voices.find(v => v.lang.startsWith("en"));
 
-  if (preferred) msg.voice = preferred;
+  if (voice) msg.voice = voice;
 
   msg.rate = 1;
   msg.pitch = 1;
@@ -85,7 +89,21 @@ function speak(text) {
   speechSynthesis.speak(msg);
 }
 
-// 🧠 Smart answering system
+// 🌐 Wikipedia fetch (main brain)
+async function wiki(query) {
+  try {
+    let url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(query);
+    let res = await fetch(url);
+    let data = await res.json();
+
+    if (data.extract) {
+      return data.extract.split(". ").slice(0, 2).join(". ") + ".";
+    }
+  } catch {}
+  return null;
+}
+
+// 🧠 Core AI logic
 async function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
@@ -95,38 +113,31 @@ async function ask() {
 
   let response = "";
 
-  // NAME MEMORY
+  // 👤 memory
   if (lower.startsWith("my name is")) {
     userName = input.split("is")[1].trim();
     localStorage.setItem("nexaris_name", userName);
-    response = "Noted. Your name is " + userName + ".";
+    response = "Got it. I’ll remember your name is " + userName + ".";
   }
 
-  // SIMPLE RESPONSES
-  else if (lower.includes("hello")) {
+  // 👋 greeting
+  else if (lower.includes("hello") || lower.includes("hi")) {
     response = userName ? "Hello " + userName + "." : "Hello.";
   }
 
-  else if (lower.includes("who are you")) {
-    response = "I am Nexaris, an assistant designed to answer questions and provide information.";
+  // ⏰ time
+  else if (lower.includes("time")) {
+    response = "It is " + new Date().toLocaleTimeString() + ".";
   }
 
+  // 🌐 wiki answers
   else {
-    // 🌐 REAL ANSWER FETCH (Wikipedia)
-    try {
-      let url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(input);
-      let res = await fetch(url);
-      let data = await res.json();
+    let wikiAnswer = await wiki(input);
 
-      if (data.extract) {
-        // ✨ clean shorter response
-        response = data.extract.split(". ").slice(0, 2).join(". ") + ".";
-      } else {
-        response = "No clear answer found. Try rephrasing.";
-      }
-
-    } catch {
-      response = "I could not retrieve information.";
+    if (wikiAnswer) {
+      response = wikiAnswer;
+    } else {
+      response = "I don’t have a direct answer for that. Try being more specific.";
     }
   }
 
