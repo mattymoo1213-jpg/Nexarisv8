@@ -1,95 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexaris</title>
-
-<style>
-body {
-  margin: 0;
-  background: black;
-  color: #00ffcc;
-  font-family: Arial;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-h1 {
-  text-align: center;
-  padding: 10px;
-}
-
-#output {
-  flex: 1;
-  padding: 15px;
-  font-size: 20px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-}
-
-.bar {
-  display: flex;
-  padding: 10px;
-  gap: 5px;
-}
-
-input {
-  flex: 1;
-  padding: 12px;
-  font-size: 16px;
-}
-
-button {
-  padding: 12px;
-  background: #00ffcc;
-  border: none;
-}
-</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexaris Test</title>
 </head>
 
-<body>
+<body style="background:black;color:#00ffcc;font-family:Arial;padding:20px;">
 
-<h1>NEXARIS</h1>
+<h2>Nexaris API Test</h2>
 
-<div id="output">Ready.</div>
+<input id="input" placeholder="Type something..." style="width:100%;padding:10px;">
+<br><br>
+<button onclick="ask()">Send</button>
 
-<div class="bar">
-  <input id="input" placeholder="Ask anything..." />
-  <button onclick="ask()">Send</button>
-  <button onclick="voice()">🎤</button>
-</div>
+<pre id="out" style="white-space:pre-wrap;margin-top:20px;"></pre>
 
 <script>
 
-// 🔑 ONLY PUT YOUR KEY HERE
-const API_KEY = "";
+// 🔑 PUT YOUR API KEY HERE
+const API_KEY = "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";
 
-function speak(text){
-  let msg = new SpeechSynthesisUtterance(text);
-  speechSynthesis.speak(msg);
-}
+"async function ask() {
+  const input = document.getElementById("input").value;
+  const out = document.getElementById("out");
 
-function voice(){
-  let r = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  r.lang = "en-US";
-  r.onresult = e => {
-    document.getElementById("input").value = e.results[0][0].transcript;
-    ask();
-  };
-  r.start();
-}
+  out.innerText = "Thinking...";
 
-function mathCheck(input){
-  if (/^[0-9+\-*/(). ]+$/.test(input)){
-    try { return eval(input).toString(); } catch { return null; }
-  }
-  return null;
-}
-
-async function getAI(prompt){
   try {
-    let res = await fetch("https://api.sambanova.ai/v1/chat/completions", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -98,51 +36,22 @@ async function getAI(prompt){
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [
-          {
-            role: "system",
-            content: "You are Nexaris, a confident AI assistant. Always answer clearly and directly."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: "system", content: "You are Nexaris. Be direct and confident." },
+          { role: "user", content: input }
         ]
       })
     });
 
-    let data = await res.json();
-
-    if (data.choices?.[0]?.message?.content){
-      return data.choices[0].message.content;
-    }
+    const data = await res.json();
 
     console.log(data);
-    return "AI error (check console).";
 
-  } catch (e){
-    return "Error connecting to AI.";
+    out.innerText =
+      data?.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    out.innerText = "Error connecting to AI.";
   }
-}
-
-async function ask(){
-  let input = document.getElementById("input").value;
-  let out = document.getElementById("output");
-
-  if (!input) return;
-
-  out.innerText = "Thinking...";
-
-  let math = mathCheck(input);
-  if (math){
-    out.innerText = math;
-    speak(math);
-    return;
-  }
-
-  let response = await getAI(input);
-
-  out.innerText = response;
-  speak(response);
 }
 
 </script>
