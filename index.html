@@ -1,57 +1,45 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexaris Test</title>
-</head>
+<body style="background:black;color:#00ffcc;font-family:Arial">
 
-<body style="background:black;color:#00ffcc;font-family:Arial;padding:20px;">
+<h2>Groq Test</h2>
 
-<h2>Nexaris API Test</h2>
-
-<input id="input" placeholder="Type something..." style="width:100%;padding:10px;">
-<br><br>
+<input id="input" style="width:100%;padding:10px">
 <button onclick="ask()">Send</button>
 
-<pre id="out" style="white-space:pre-wrap;margin-top:20px;"></pre>
+<pre id="out"></pre>
 
 <script>
 
-// 🔑 PUT YOUR API KEY HERE
 const API_KEY = "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";
 
-"async function ask() {
-  const input = document.getElementById("input").value;
+async function ask() {
+  const prompt = document.getElementById("input").value;
   const out = document.getElementById("out");
 
   out.innerText = "Thinking...";
 
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + API_KEY
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          { role: "system", content: "You are Nexaris. Be direct and confident." },
-          { role: "user", content: input }
-        ]
-      })
-    });
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + API_KEY
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        { role: "user", content: prompt }
+      ]
+    })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    console.log(data);
+  console.log(data);
 
-    out.innerText =
-      data?.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
-
-  } catch (err) {
-    out.innerText = "Error connecting to AI.";
-  }
+  out.innerText =
+    data?.choices?.[0]?.message?.content ||
+    JSON.stringify(data, null, 2);
 }
 
 </script>
