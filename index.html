@@ -61,7 +61,7 @@ button {
 
 <h1>NEXARIS</h1>
 
-<div id="output">System online. Tap 🎤 or type a question.</div>
+<div id="output">System online.</div>
 
 <div class="inputArea">
 <input id="input" placeholder="Ask or speak..." />
@@ -89,7 +89,7 @@ function speak(text) {
   speechSynthesis.speak(msg);
 }
 
-// 🌐 WIKIPEDIA SEARCH
+// 🌐 Wikipedia
 async function wiki(query) {
   try {
     let url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(query);
@@ -107,14 +107,12 @@ async function wiki(query) {
 function mathCheck(input) {
   input = input.toLowerCase();
 
-  // sqrt
   if (input.includes("sqrt") || input.includes("√") || input.includes("square root")) {
     let num = input.replace(/sqrt|√|square root|of|\(|\)/g, "").trim();
     let result = Math.sqrt(Number(num));
     return "That equals " + result;
   }
 
-  // power
   if (input.includes("^")) {
     let parts = input.split("^");
     let base = Number(parts[0].trim());
@@ -122,7 +120,6 @@ function mathCheck(input) {
     return "That equals " + Math.pow(base, exp);
   }
 
-  // normal math
   if (/^[0-9+\-*/(). ]+$/.test(input)) {
     try {
       return "That equals " + Function("return " + input)();
@@ -134,16 +131,12 @@ function mathCheck(input) {
   return null;
 }
 
-// 🐦 SIMPLE ADVICE MODE
+// 🐦 ADVICE MODE
 function adviceCheck(input) {
   let lower = input.toLowerCase();
 
   if (lower.includes("bird") && lower.includes("cage")) {
-    return "A good bird cage should be at least 18–24 inches wide, but larger is always better so birds can fully stretch and fly.";
-  }
-
-  if (lower.includes("how big should")) {
-    return "It depends on what you're referring to. Tell me the object and I’ll give a proper size recommendation.";
+    return "A good bird cage should be at least 18–24 inches wide, but bigger is always better so birds can move comfortably.";
   }
 
   return null;
@@ -154,7 +147,7 @@ function startVoice() {
   let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    alert("Voice input not supported on this device.");
+    alert("Voice input not supported.");
     return;
   }
 
@@ -170,7 +163,7 @@ function startVoice() {
   recognition.start();
 }
 
-// 🧠 MAIN AI CORE
+// 🧠 MAIN BRAIN (MODE SYSTEM)
 async function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
@@ -178,36 +171,58 @@ async function ask() {
   output.innerText = "Thinking...";
 
   let response = "";
+  let lower = input.toLowerCase();
 
-  // 👤 NAME MEMORY
-  if (input.toLowerCase().startsWith("my name is")) {
+  // 👤 memory
+  if (lower.startsWith("my name is")) {
     userName = input.split("is")[1].trim();
     localStorage.setItem("nexaris_name", userName);
     response = "Got it. I’ll remember your name is " + userName + ".";
   }
 
-  // ➕ MATH FIRST
+  // ➕ math
   else if (mathCheck(input)) {
     response = mathCheck(input);
   }
 
-  // 🐦 ADVICE
+  // 🐦 advice
   else if (adviceCheck(input)) {
     response = adviceCheck(input);
   }
 
-  // 🌐 WIKIPEDIA + DEEP RESPONSE
+  // 📘 ONLY DEFINITION MODE
+  else if (lower.startsWith("what does") && lower.includes("mean")) {
+    let cleaned = input
+      .replace("what does", "")
+      .replace("mean", "")
+      .replace("?", "")
+      .replace("mean", "")
+      .trim();
+
+    let wikiAnswer = await wiki(cleaned);
+
+    if (wikiAnswer) {
+      response =
+        "Here’s the definition:\n\n" +
+        wikiAnswer +
+        "\n\nLet me know if you want it simpler.";
+    } else {
+      response = "I couldn’t find a clear definition for that.";
+    }
+  }
+
+  // 🗣️ NORMAL CHAT MODE (NO RANTING)
   else {
     let wikiAnswer = await wiki(input);
 
     if (wikiAnswer) {
       response =
-        "Here’s what I found:\n\n" +
-        wikiAnswer +
-        "\n\nIf you want, I can explain this further or simplify it.";
+        "Here’s a quick explanation:\n" +
+        wikiAnswer.split(". ").slice(0, 2).join(". ") +
+        ".";
     } else {
       response =
-        "I couldn’t find a direct answer.\n\nTry being more specific and I’ll explain it better.";
+        "I’m not fully sure, but I can help you figure it out if you give me a bit more detail.";
     }
   }
 
