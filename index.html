@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexaris AI</title>
+<title>Nexaris</title>
 
 <style>
 body {
@@ -37,7 +37,7 @@ h1 {
 input {
   flex: 1;
   padding: 12px;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 button {
@@ -62,48 +62,33 @@ button {
 
 <script>
 
-// 🔑 PUT YOUR API KEY HERE ONLY
-const API_KEY = "c63c094c-3c12-4048-8af1-f58f9cfef8c6";
+// 🔑 ONLY PUT YOUR KEY HERE
+const API_KEY = "PASTE_YOUR_API_KEY_HERE";
 
-
-// 🔊 SPEAK
 function speak(text){
   let msg = new SpeechSynthesisUtterance(text);
   speechSynthesis.speak(msg);
 }
 
-
-// 🎤 VOICE
 function voice(){
   let r = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   r.lang = "en-US";
-
   r.onresult = e => {
     document.getElementById("input").value = e.results[0][0].transcript;
     ask();
   };
-
   r.start();
 }
 
-
-// ➕ MATH
 function mathCheck(input){
   if (/^[0-9+\-*/(). ]+$/.test(input)){
-    try {
-      return eval(input).toString();
-    } catch {
-      return null;
-    }
+    try { return eval(input).toString(); } catch { return null; }
   }
   return null;
 }
 
-
-// 🤖 AI FUNCTION (FIXED + DEBUG READY)
 async function getAI(prompt){
   try {
-
     let res = await fetch("https://api.sambanova.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -115,7 +100,7 @@ async function getAI(prompt){
         messages: [
           {
             role: "system",
-            content: "You are Nexaris, a confident AI assistant. Always answer directly and clearly. Never say you are unsure."
+            content: "You are Nexaris, a confident AI assistant. Always answer clearly and directly."
           },
           {
             role: "user",
@@ -127,40 +112,33 @@ async function getAI(prompt){
 
     let data = await res.json();
 
-    console.log("STATUS:", res.status);
-    console.log("RAW RESPONSE:", data);
-
-    if (res.ok && data.choices?.[0]?.message?.content){
+    if (data.choices?.[0]?.message?.content){
       return data.choices[0].message.content;
     }
 
+    console.log(data);
     return "AI error (check console).";
 
   } catch (e){
-    console.log("FETCH ERROR:", e);
     return "Error connecting to AI.";
   }
 }
 
-
-// 🧠 MAIN FLOW
 async function ask(){
-  let input = document.getElementById("input").value.trim();
+  let input = document.getElementById("input").value;
   let out = document.getElementById("output");
 
   if (!input) return;
 
   out.innerText = "Thinking...";
 
-  // math first
-  let m = mathCheck(input);
-  if (m){
-    out.innerText = m;
-    speak(m);
+  let math = mathCheck(input);
+  if (math){
+    out.innerText = math;
+    speak(math);
     return;
   }
 
-  // AI
   let response = await getAI(input);
 
   out.innerText = response;
