@@ -17,7 +17,7 @@ body {
 
 h1 {
   text-align: center;
-  padding: 12px;
+  padding: 10px;
 }
 
 #output {
@@ -28,7 +28,7 @@ h1 {
   white-space: pre-wrap;
 }
 
-.inputBar {
+.bar {
   display: flex;
   padding: 10px;
   gap: 5px;
@@ -44,7 +44,6 @@ button {
   padding: 12px;
   background: #00ffcc;
   border: none;
-  font-size: 16px;
 }
 </style>
 </head>
@@ -55,7 +54,7 @@ button {
 
 <div id="output">Ready.</div>
 
-<div class="inputBar">
+<div class="bar">
   <input id="input" placeholder="Ask anything..." />
   <button onclick="ask()">Send</button>
   <button onclick="voice()">🎤</button>
@@ -63,28 +62,34 @@ button {
 
 <script>
 
-const API_KEY = "83489193-5f89-409c-9224-bf21bace64f2"; // 🔑 ONLY HERE
+// 🔑 PUT YOUR API KEY HERE ONLY
+const API_KEY = "83489193-5f89-409c-9224-bf21bace64f2";
 
-// 🔊 speak
+
+// 🔊 SPEAK
 function speak(text){
-  let s = new SpeechSynthesisUtterance(text);
-  speechSynthesis.speak(s);
+  let msg = new SpeechSynthesisUtterance(text);
+  speechSynthesis.speak(msg);
 }
 
-// 🎤 voice
+
+// 🎤 VOICE
 function voice(){
   let r = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   r.lang = "en-US";
+
   r.onresult = e => {
     document.getElementById("input").value = e.results[0][0].transcript;
     ask();
   };
+
   r.start();
 }
 
-// ➕ math
-function math(input){
-  if (/^[0-9+\-*/(). ]+$/.test(input)) {
+
+// ➕ MATH
+function mathCheck(input){
+  if (/^[0-9+\-*/(). ]+$/.test(input)){
     try {
       return eval(input).toString();
     } catch {
@@ -94,9 +99,11 @@ function math(input){
   return null;
 }
 
-// 🤖 AI
+
+// 🤖 AI FUNCTION (FIXED + DEBUG READY)
 async function getAI(prompt){
   try {
+
     let res = await fetch("https://api.sambanova.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -104,11 +111,11 @@ async function getAI(prompt){
         "Authorization": "Bearer " + API_KEY
       },
       body: JSON.stringify({
-        model: "Meta-Llama-3.1-8B-Instruct",
+        model: "llama-3.1-8b-instant",
         messages: [
           {
             role: "system",
-            content: "You are Nexaris, a confident AI assistant. Always answer clearly and directly. Never say you are unsure unless absolutely necessary."
+            content: "You are Nexaris, a confident AI assistant. Always answer directly and clearly. Never say you are unsure."
           },
           {
             role: "user",
@@ -120,22 +127,25 @@ async function getAI(prompt){
 
     let data = await res.json();
 
-    console.log(data); // 👈 debug helper
+    console.log("STATUS:", res.status);
+    console.log("RAW RESPONSE:", data);
 
-    if (data.choices && data.choices[0]) {
+    if (res.ok && data.choices?.[0]?.message?.content){
       return data.choices[0].message.content;
     }
 
-    return "AI returned no response.";
+    return "AI error (check console).";
 
-  } catch (e) {
+  } catch (e){
+    console.log("FETCH ERROR:", e);
     return "Error connecting to AI.";
   }
 }
 
-// 🧠 main
+
+// 🧠 MAIN FLOW
 async function ask(){
-  let input = document.getElementById("input").value;
+  let input = document.getElementById("input").value.trim();
   let out = document.getElementById("output");
 
   if (!input) return;
@@ -143,8 +153,8 @@ async function ask(){
   out.innerText = "Thinking...";
 
   // math first
-  let m = math(input);
-  if (m) {
+  let m = mathCheck(input);
+  if (m){
     out.innerText = m;
     speak(m);
     return;
@@ -160,4 +170,4 @@ async function ask(){
 </script>
 
 </body>
-</html> 
+</html>
