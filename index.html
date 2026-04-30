@@ -32,12 +32,14 @@ h1 {
   font-size: 26px;
   line-height: 1.6;
   overflow-y: auto;
+  white-space: pre-wrap;
 }
 
 .inputArea {
   display: flex;
   padding: 10px;
-  gap: 8px;
+  gap: 6px;
+  border-top: 1px solid #00ffcc33;
 }
 
 input {
@@ -59,22 +61,26 @@ button {
 
 <h1>NEXARIS</h1>
 
-<div id="output">System ready.</div>
+<div id="output">System online. Tap 🎤 or type a question.</div>
 
 <div class="inputArea">
-<input id="input" placeholder="Ask anything..." />
+<input id="input" placeholder="Ask or speak..." />
 <button onclick="ask()">Send</button>
+<button onclick="startVoice()">🎤</button>
 </div>
 
 <script>
 let userName = localStorage.getItem("nexaris_name");
 
-// 🔊 Voice
+// 🔊 VOICE OUTPUT
 function speak(text) {
   let msg = new SpeechSynthesisUtterance(text);
   let voices = speechSynthesis.getVoices();
 
-  let voice = voices.find(v => v.lang.startsWith("en"));
+  let voice =
+    voices.find(v => v.lang === "en-AU") ||
+    voices.find(v => v.lang.startsWith("en"));
+
   if (voice) msg.voice = voice;
 
   msg.rate = 1;
@@ -83,7 +89,7 @@ function speak(text) {
   speechSynthesis.speak(msg);
 }
 
-// 🌐 Wikipedia lookup
+// 🌐 WIKIPEDIA SEARCH
 async function wiki(query) {
   try {
     let url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(query);
@@ -91,41 +97,80 @@ async function wiki(query) {
     let data = await res.json();
 
     if (data.extract) {
-      return data.extract.split(". ").slice(0, 2).join(". ") + ".";
+      return data.extract.split(". ").slice(0, 3).join(". ") + ".";
     }
   } catch {}
   return null;
 }
 
-// 🧠 smart bird/explanation helper
-function adviceMode(input) {
-  let lower = input.toLowerCase();
-
-  if (lower.includes("bird") && lower.includes("cage")) {
-    return "Most small birds need a cage at least 18–24 inches wide, but bigger is always better so they can fly.";
-  }
-
-  if (lower.includes("how big should")) {
-    return "It depends on the animal or object. Tell me what you're referring to and I’ll give a proper size.";
-  }
-
-  return null;
-}
-
-// ➕ math handler
+// ➕ MATH ENGINE
 function mathCheck(input) {
+  input = input.toLowerCase();
+
+  // sqrt
+  if (input.includes("sqrt") || input.includes("√") || input.includes("square root")) {
+    let num = input.replace(/sqrt|√|square root|of|\(|\)/g, "").trim();
+    let result = Math.sqrt(Number(num));
+    return "That equals " + result;
+  }
+
+  // power
+  if (input.includes("^")) {
+    let parts = input.split("^");
+    let base = Number(parts[0].trim());
+    let exp = Number(parts[1].trim());
+    return "That equals " + Math.pow(base, exp);
+  }
+
+  // normal math
   if (/^[0-9+\-*/(). ]+$/.test(input)) {
     try {
-      let result = Function("return " + input)();
-      return "That equals " + result;
+      return "That equals " + Function("return " + input)();
     } catch {
       return "I couldn’t calculate that.";
     }
   }
+
   return null;
 }
 
-// 🧠 main brain
+// 🐦 SIMPLE ADVICE MODE
+function adviceCheck(input) {
+  let lower = input.toLowerCase();
+
+  if (lower.includes("bird") && lower.includes("cage")) {
+    return "A good bird cage should be at least 18–24 inches wide, but larger is always better so birds can fully stretch and fly.";
+  }
+
+  if (lower.includes("how big should")) {
+    return "It depends on what you're referring to. Tell me the object and I’ll give a proper size recommendation.";
+  }
+
+  return null;
+}
+
+// 🎤 VOICE INPUT
+function startVoice() {
+  let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Voice input not supported on this device.");
+    return;
+  }
+
+  let recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+
+  recognition.onresult = function(event) {
+    let text = event.results[0][0].transcript;
+    document.getElementById("input").value = text;
+    ask();
+  };
+
+  recognition.start();
+}
+
+// 🧠 MAIN AI CORE
 async function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
@@ -134,31 +179,35 @@ async function ask() {
 
   let response = "";
 
-  // 👤 memory
+  // 👤 NAME MEMORY
   if (input.toLowerCase().startsWith("my name is")) {
     userName = input.split("is")[1].trim();
     localStorage.setItem("nexaris_name", userName);
-    response = "Got it. I’ll remember your name is " + userName;
+    response = "Got it. I’ll remember your name is " + userName + ".";
   }
 
-  // ➕ math first
+  // ➕ MATH FIRST
   else if (mathCheck(input)) {
     response = mathCheck(input);
   }
 
-  // 🧠 advice mode (bird cages etc.)
-  else if (adviceMode(input)) {
-    response = adviceMode(input);
+  // 🐦 ADVICE
+  else if (adviceCheck(input)) {
+    response = adviceCheck(input);
   }
 
-  // 🌐 Wikipedia fallback
+  // 🌐 WIKIPEDIA + DEEP RESPONSE
   else {
     let wikiAnswer = await wiki(input);
 
     if (wikiAnswer) {
-      response = wikiAnswer;
+      response =
+        "Here’s what I found:\n\n" +
+        wikiAnswer +
+        "\n\nIf you want, I can explain this further or simplify it.";
     } else {
-      response = "I couldn’t find a clear answer. Try being more specific.";
+      response =
+        "I couldn’t find a direct answer.\n\nTry being more specific and I’ll explain it better.";
     }
   }
 
