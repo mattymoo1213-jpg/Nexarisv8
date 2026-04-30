@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html>
-<body style="background:black;color:#00ffcc;font-family:Arial">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexaris</title>
+</head>
 
-<h2>Groq Test</h2>
+<body style="background:black;color:#00ffcc;font-family:Arial;padding:15px;">
 
-<input id="input" style="width:100%;padding:10px">
+<h2>Nexaris AI</h2>
+
+<input id="input" placeholder="Ask something..." style="width:100%;padding:10px;">
+<br><br>
 <button onclick="ask()">Send</button>
 
-<pre id="out"></pre>
+<pre id="out" style="white-space:pre-wrap;margin-top:20px;"></pre>
 
 <script>
 
+// 🔑 YOUR API KEY (frontend only)
 const API_KEY = "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";
 
 async function ask() {
@@ -19,27 +26,43 @@ async function ask() {
 
   out.innerText = "Thinking...";
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + API_KEY
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      messages: [
-        { role: "user", content: prompt }
-      ]
-    })
-  });
+  try {
+    const res = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + API_KEY
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [
+            {
+              role: "system",
+              content: "You are Nexaris, a direct AI assistant. No hesitation."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ]
+        })
+      }
+    );
 
-  const data = await res.json();
+    const data = await res.json();
 
-  console.log(data);
+    console.log("FULL RESPONSE:", data);
 
-  out.innerText =
-    data?.choices?.[0]?.message?.content ||
-    JSON.stringify(data, null, 2);
+    out.innerText =
+      data?.choices?.[0]?.message?.content ||
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    out.innerText = "Error connecting to AI.";
+    console.log(err);
+  }
 }
 
 </script>
