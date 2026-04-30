@@ -11,7 +11,6 @@ html, body {
   background: black;
   font-family: Arial;
   color: #00ffcc;
-  font-size: 22px;
 }
 
 body {
@@ -21,133 +20,70 @@ body {
 
 h1 {
   text-align: center;
-  font-size: 34px;
   padding: 15px;
-  border-bottom: 1px solid #00ffcc33;
 }
 
 #output {
   flex: 1;
   padding: 20px;
-  font-size: 26px;
-  line-height: 1.6;
-  overflow-y: auto;
+  font-size: 22px;
   white-space: pre-wrap;
+  overflow-y: auto;
 }
 
 .inputArea {
   display: flex;
+  gap: 5px;
   padding: 10px;
-  gap: 6px;
-  border-top: 1px solid #00ffcc33;
 }
 
 input {
   flex: 1;
-  padding: 16px;
-  font-size: 20px;
+  padding: 15px;
+  font-size: 18px;
 }
 
 button {
-  padding: 16px;
+  padding: 15px;
   background: #00ffcc;
   border: none;
-  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 
-<h1>NEXARIS</h1>
+<h1>NEXARIS AI</h1>
 
-<div id="output">System online.</div>
+<div id="output">Ready. Ask me anything.</div>
 
 <div class="inputArea">
-<input id="input" placeholder="Ask or speak..." />
+<input id="input" placeholder="Ask anything..." />
 <button onclick="ask()">Send</button>
 <button onclick="startVoice()">🎤</button>
 </div>
 
 <script>
-let userName = localStorage.getItem("nexaris_name");
 
-// 🔊 VOICE OUTPUT
+// 🔑 ============================
+// 🔑 366b5567-edba-407a-8ac4-6a82f1b076f0
+// 🔑 ============================
+const API_KEY = "PASTE_YOUR_API_KEY_HERE";
+
+
+// 🔊 SPEAK
 function speak(text) {
   let msg = new SpeechSynthesisUtterance(text);
-  let voices = speechSynthesis.getVoices();
-
-  let voice =
-    voices.find(v => v.lang === "en-AU") ||
-    voices.find(v => v.lang.startsWith("en"));
-
-  if (voice) msg.voice = voice;
-
-  msg.rate = 1;
-  msg.pitch = 1;
-
   speechSynthesis.speak(msg);
 }
 
-// 🌐 Wikipedia
-async function wiki(query) {
-  try {
-    let url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(query);
-    let res = await fetch(url);
-    let data = await res.json();
-
-    if (data.extract) {
-      return data.extract.split(". ").slice(0, 3).join(". ") + ".";
-    }
-  } catch {}
-  return null;
-}
-
-// ➕ MATH ENGINE
-function mathCheck(input) {
-  input = input.toLowerCase();
-
-  if (input.includes("sqrt") || input.includes("√") || input.includes("square root")) {
-    let num = input.replace(/sqrt|√|square root|of|\(|\)/g, "").trim();
-    let result = Math.sqrt(Number(num));
-    return "That equals " + result;
-  }
-
-  if (input.includes("^")) {
-    let parts = input.split("^");
-    let base = Number(parts[0].trim());
-    let exp = Number(parts[1].trim());
-    return "That equals " + Math.pow(base, exp);
-  }
-
-  if (/^[0-9+\-*/(). ]+$/.test(input)) {
-    try {
-      return "That equals " + Function("return " + input)();
-    } catch {
-      return "I couldn’t calculate that.";
-    }
-  }
-
-  return null;
-}
-
-// 🐦 ADVICE MODE
-function adviceCheck(input) {
-  let lower = input.toLowerCase();
-
-  if (lower.includes("bird") && lower.includes("cage")) {
-    return "A good bird cage should be at least 18–24 inches wide, but bigger is always better so birds can move comfortably.";
-  }
-
-  return null;
-}
 
 // 🎤 VOICE INPUT
 function startVoice() {
   let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    alert("Voice input not supported.");
+    alert("Voice not supported");
     return;
   }
 
@@ -163,72 +99,83 @@ function startVoice() {
   recognition.start();
 }
 
-// 🧠 MAIN BRAIN (MODE SYSTEM)
+
+// ➕ SIMPLE MATH
+function mathCheck(input) {
+  if (/^[0-9+\-*/(). ]+$/.test(input)) {
+    try {
+      return "That equals " + Function("return " + input)();
+    } catch {
+      return null;
+    }
+  }
+
+  if (input.toLowerCase().includes("sqrt")) {
+    let num = input.replace(/[^0-9.]/g, "");
+    return "That equals " + Math.sqrt(Number(num));
+  }
+
+  return null;
+}
+
+
+// 🤖 AI FUNCTION (SAMBANOVA)
+async function getAI(prompt) {
+  try {
+    let res = await fetch("https://api.sambanova.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + API_KEY
+      },
+      body: JSON.stringify({
+        model: "Meta-Llama-3.1-8B-Instruct",
+        messages: [
+          {
+            role: "system",
+            content: "You are Nexaris, a helpful AI that talks naturally like a real assistant. Be clear, friendly, and actually answer the question."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      })
+    });
+
+    let data = await res.json();
+    return data.choices[0].message.content;
+
+  } catch (err) {
+    return "Error connecting to AI.";
+  }
+}
+
+
+// 🧠 MAIN FUNCTION
 async function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
 
+  if (!input) return;
+
   output.innerText = "Thinking...";
 
-  let response = "";
-  let lower = input.toLowerCase();
-
-  // 👤 memory
-  if (lower.startsWith("my name is")) {
-    userName = input.split("is")[1].trim();
-    localStorage.setItem("nexaris_name", userName);
-    response = "Got it. I’ll remember your name is " + userName + ".";
+  // ➕ math first
+  let math = mathCheck(input);
+  if (math) {
+    output.innerText = math;
+    speak(math);
+    return;
   }
 
-  // ➕ math
-  else if (mathCheck(input)) {
-    response = mathCheck(input);
-  }
-
-  // 🐦 advice
-  else if (adviceCheck(input)) {
-    response = adviceCheck(input);
-  }
-
-  // 📘 ONLY DEFINITION MODE
-  else if (lower.startsWith("what does") && lower.includes("mean")) {
-    let cleaned = input
-      .replace("what does", "")
-      .replace("mean", "")
-      .replace("?", "")
-      .replace("mean", "")
-      .trim();
-
-    let wikiAnswer = await wiki(cleaned);
-
-    if (wikiAnswer) {
-      response =
-        "Here’s the definition:\n\n" +
-        wikiAnswer +
-        "\n\nLet me know if you want it simpler.";
-    } else {
-      response = "I couldn’t find a clear definition for that.";
-    }
-  }
-
-  // 🗣️ NORMAL CHAT MODE (NO RANTING)
-  else {
-    let wikiAnswer = await wiki(input);
-
-    if (wikiAnswer) {
-      response =
-        "Here’s a quick explanation:\n" +
-        wikiAnswer.split(". ").slice(0, 2).join(". ") +
-        ".";
-    } else {
-      response =
-        "I’m not fully sure, but I can help you figure it out if you give me a bit more detail.";
-    }
-  }
+  // 🤖 AI
+  let response = await getAI(input);
 
   output.innerText = response;
   speak(response);
 }
+
 </script>
 
 </body>
