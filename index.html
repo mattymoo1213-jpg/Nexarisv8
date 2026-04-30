@@ -5,139 +5,97 @@
 <title>Nexaris AI</title>
 
 <style>
-html, body {
-  margin: 0;
-  height: 100%;
-  background: black;
-  font-family: Arial;
-  color: #00ffcc;
-}
-
 body {
+  margin: 0;
+  background: black;
+  color: #00ffcc;
+  font-family: Arial;
   display: flex;
   flex-direction: column;
+  height: 100vh;
 }
 
 h1 {
   text-align: center;
-  padding: 15px;
+  padding: 12px;
 }
 
 #output {
   flex: 1;
-  padding: 20px;
-  font-size: 22px;
-  white-space: pre-wrap;
+  padding: 15px;
+  font-size: 20px;
   overflow-y: auto;
+  white-space: pre-wrap;
 }
 
-.inputArea {
+.inputBar {
   display: flex;
-  gap: 5px;
   padding: 10px;
+  gap: 5px;
 }
 
 input {
   flex: 1;
-  padding: 15px;
+  padding: 12px;
   font-size: 18px;
 }
 
 button {
-  padding: 15px;
+  padding: 12px;
   background: #00ffcc;
   border: none;
+  font-size: 16px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>NEXARIS AI</h1>
+<h1>NEXARIS</h1>
 
-<div id="output">Ready. Ask me anything.</div>
+<div id="output">Ready.</div>
 
-<div class="inputArea">
-<input id="input" placeholder="Ask anything..." />
-<button onclick="ask()">Send</button>
-<button onclick="startVoice()">🎤</button>
+<div class="inputBar">
+  <input id="input" placeholder="Ask anything..." />
+  <button onclick="ask()">Send</button>
+  <button onclick="voice()">🎤</button>
 </div>
 
 <script>
 
-// 🔑 ============================
-// 🔑41962597-047f-4d67-9065-11fafa91403a
-// 🔑 ============================
-const API_KEY = 41962597-047f-4d67-9065-11fafa91403a;
+const API_KEY = "83489193-5f89-409c-9224-bf21bace64f2"; // 🔑 ONLY HERE
 
-
-// 🔊 SPEAK
-function speak(text) {
-  let msg = new SpeechSynthesisUtterance(text);
-  speechSynthesis.speak(msg);
+// 🔊 speak
+function speak(text){
+  let s = new SpeechSynthesisUtterance(text);
+  speechSynthesis.speak(s);
 }
 
-
-// 🎤 VOICE INPUT
-function startVoice() {
-  let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("Voice not supported");
-    return;
-  }
-
-  let recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-
-  recognition.onresult = function(event) {
-    let text = event.results[0][0].transcript;
-    document.getElementById("input").value = text;
+// 🎤 voice
+function voice(){
+  let r = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  r.lang = "en-US";
+  r.onresult = e => {
+    document.getElementById("input").value = e.results[0][0].transcript;
     ask();
   };
-
-  recognition.start();
+  r.start();
 }
 
-
-// ➕ SIMPLE MATH
-function mathCheck(input) {
+// ➕ math
+function math(input){
   if (/^[0-9+\-*/(). ]+$/.test(input)) {
     try {
-      return "That equals " + Function("return " + input)();
+      return eval(input).toString();
     } catch {
       return null;
     }
   }
-
-  if (input.toLowerCase().includes("sqrt")) {
-    let num = input.replace(/[^0-9.]/g, "");
-    return "That equals " + Math.sqrt(Number(num));
-  }
-
   return null;
 }
 
-
-// 🌐 WIKIPEDIA BACKUP
-async function getWiki(topic) {
-  try {
-    let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
-    let data = await res.json();
-
-    if (data.extract) {
-      return data.extract;
-    } else {
-      return null;
-    }
-  } catch {
-    return null;
-  }
-}
-
-
-// 🤖 AI (PRIMARY BRAIN)
-async function getAI(prompt) {
+// 🤖 AI
+async function getAI(prompt){
   try {
     let res = await fetch("https://api.sambanova.ai/v1/chat/completions", {
       method: "POST",
@@ -150,7 +108,7 @@ async function getAI(prompt) {
         messages: [
           {
             role: "system",
-            content: "You are Nexaris, a confident and intelligent AI assistant. Always give clear, direct answers. Do NOT say 'I'm not sure' unless absolutely necessary. If you truly do not know something, respond ONLY with: UNKNOWN"
+            content: "You are Nexaris, a confident AI assistant. Always answer clearly and directly. Never say you are unsure unless absolutely necessary."
           },
           {
             role: "user",
@@ -162,60 +120,44 @@ async function getAI(prompt) {
 
     let data = await res.json();
 
-    if (data.choices && data.choices.length > 0) {
+    console.log(data); // 👈 debug helper
+
+    if (data.choices && data.choices[0]) {
       return data.choices[0].message.content;
-    } else {
-      return "Error getting response.";
     }
 
-  } catch {
+    return "AI returned no response.";
+
+  } catch (e) {
     return "Error connecting to AI.";
   }
 }
 
-
-// 🧠 MAIN SYSTEM
-async function ask() {
-  let input = document.getElementById("input").value.trim();
-  let output = document.getElementById("output");
+// 🧠 main
+async function ask(){
+  let input = document.getElementById("input").value;
+  let out = document.getElementById("output");
 
   if (!input) return;
 
-  output.innerText = "Thinking...";
+  out.innerText = "Thinking...";
 
-  // ➕ math first
-  let math = mathCheck(input);
-  if (math) {
-    output.innerText = math;
-    speak(math);
+  // math first
+  let m = math(input);
+  if (m) {
+    out.innerText = m;
+    speak(m);
     return;
   }
 
-  // 🤖 AI FIRST
-  let aiResponse = await getAI(input);
+  // AI
+  let response = await getAI(input);
 
-  // 🌐 If AI doesn't know → Wikipedia
-  if (aiResponse === "UNKNOWN") {
-    let wiki = await getWiki(input);
-
-    if (wiki) {
-      output.innerText = wiki;
-      speak(wiki);
-    } else {
-      let fallback = "I couldn't find a clear answer, but try asking in a different way.";
-      output.innerText = fallback;
-      speak(fallback);
-    }
-
-    return;
-  }
-
-  // 🧠 Normal AI response
-  output.innerText = aiResponse;
-  speak(aiResponse);
+  out.innerText = response;
+  speak(response);
 }
 
 </script>
 
 </body>
-</html>
+</html> 
