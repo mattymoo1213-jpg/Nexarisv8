@@ -66,7 +66,7 @@ button {
 <script>
 
 // 🔑 ============================
-// 🔑 366b5567-edba-407a-8ac4-6a82f1b076f0
+// 🔑83489193-5f89-409c-9224-bf21bace64f2
 // 🔑 ============================
 const API_KEY = "PASTE_YOUR_API_KEY_HERE";
 
@@ -119,7 +119,24 @@ function mathCheck(input) {
 }
 
 
-// 🤖 AI FUNCTION (SAMBANOVA)
+// 🌐 WIKIPEDIA BACKUP
+async function getWiki(topic) {
+  try {
+    let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
+    let data = await res.json();
+
+    if (data.extract) {
+      return data.extract;
+    } else {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
+
+// 🤖 AI (PRIMARY BRAIN)
 async function getAI(prompt) {
   try {
     let res = await fetch("https://api.sambanova.ai/v1/chat/completions", {
@@ -133,7 +150,7 @@ async function getAI(prompt) {
         messages: [
           {
             role: "system",
-            content: "You are Nexaris, a helpful AI that talks naturally like a real assistant. Be clear, friendly, and actually answer the question."
+            content: "You are Nexaris, a confident and intelligent AI assistant. Always give clear, direct answers. Do NOT say 'I'm not sure' unless absolutely necessary. If you truly do not know something, respond ONLY with: UNKNOWN"
           },
           {
             role: "user",
@@ -144,15 +161,20 @@ async function getAI(prompt) {
     });
 
     let data = await res.json();
-    return data.choices[0].message.content;
 
-  } catch (err) {
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content;
+    } else {
+      return "Error getting response.";
+    }
+
+  } catch {
     return "Error connecting to AI.";
   }
 }
 
 
-// 🧠 MAIN FUNCTION
+// 🧠 MAIN SYSTEM
 async function ask() {
   let input = document.getElementById("input").value.trim();
   let output = document.getElementById("output");
@@ -169,11 +191,28 @@ async function ask() {
     return;
   }
 
-  // 🤖 AI
-  let response = await getAI(input);
+  // 🤖 AI FIRST
+  let aiResponse = await getAI(input);
 
-  output.innerText = response;
-  speak(response);
+  // 🌐 If AI doesn't know → Wikipedia
+  if (aiResponse === "UNKNOWN") {
+    let wiki = await getWiki(input);
+
+    if (wiki) {
+      output.innerText = wiki;
+      speak(wiki);
+    } else {
+      let fallback = "I couldn't find a clear answer, but try asking in a different way.";
+      output.innerText = fallback;
+      speak(fallback);
+    }
+
+    return;
+  }
+
+  // 🧠 Normal AI response
+  output.innerText = aiResponse;
+  speak(aiResponse);
 }
 
 </script>
