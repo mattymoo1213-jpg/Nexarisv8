@@ -1,16 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexaris AI</title>
+</head>
+
+<body style="background:black;color:#00ffcc;font-family:Arial;padding:15px;">
+
+<h2>Nexaris</h2>
+
+<input id="input" placeholder="Ask something..." style="width:100%;padding:10px;">
+<br><br>
+<button onclick="ask()">Send</button>
+
+<pre id="output" style="white-space:pre-wrap;margin-top:20px;"></pre>
+
 <script>
-fetch("https://api.groq.com/openai/v1/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "https://api.groq.com/openai/v1/chat/completions"
-  },
-  body: JSON.stringify({
-    model: "llama-3.1-8b-instant",
-    messages: [{ role: "user", content: "hello" }]
-  })
-})
-.then(r => r.json())
-.then(d => console.log("RESULT:", d))
-.catch(e => console.log("ERROR:", e));
+
+// 🔑 PUT YOUR KEY HERE
+const API_KEY = "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";
+
+async function ask() {
+  const text = document.getElementById("input").value;
+  const out = document.getElementById("output");
+
+  out.innerText = "Thinking...";
+
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + API_KEY
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          {
+            role: "system",
+            content: "You are Nexaris, a direct and helpful AI assistant."
+          },
+          {
+            role: "user",
+            content: text
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+
+    console.log("RESPONSE:", data);
+
+    if (data.error) {
+      out.innerText = "Error: " + data.error.message;
+      return;
+    }
+
+    out.innerText =
+      data?.choices?.[0]?.message?.content ||
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    console.log(err);
+    out.innerText = "Network or connection error.";
+  }
+}
+
 </script>
+
+</body>
+</html>
