@@ -14,7 +14,6 @@ body {
   color: white;
 }
 
-/* SIDEBAR */
 #sidebar {
   width: 200px;
   background: #111;
@@ -36,7 +35,6 @@ body {
 }
 #toggleBtn.hidden { left: 10px; }
 
-/* CHAT LIST */
 .chat-tab {
   padding: 10px;
   margin-bottom: 5px;
@@ -50,14 +48,12 @@ body {
   color: black;
 }
 
-/* MAIN */
 #main {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* CHAT AREA */
 #chat {
   flex: 1;
   padding: 15px;
@@ -67,7 +63,6 @@ body {
   gap: 12px;
 }
 
-/* USER bubble (grey) */
 .user {
   align-self: flex-end;
   background: #444;
@@ -77,7 +72,6 @@ body {
   max-width: 70%;
 }
 
-/* AI = NO bubble */
 .ai {
   align-self: flex-start;
   color: white;
@@ -85,7 +79,6 @@ body {
   line-height: 1.5;
 }
 
-/* INPUT */
 #inputArea {
   display: flex;
   padding: 10px;
@@ -140,7 +133,7 @@ let chats = {};
 let currentChat = "General";
 chats[currentChat] = [];
 
-/* TOGGLE */
+/* TOGGLE SIDEBAR */
 function toggleSidebar() {
   const sidebar = document.getElementById("sidebar");
   const btn = document.getElementById("toggleBtn");
@@ -232,7 +225,7 @@ async function send() {
         messages: [
           {
             role: "system",
-            content: "Keep responses short and natural. End by inviting the user to continue."
+            content: "Keep responses short, clear, and natural. Do not ask follow-up questions unless necessary."
           },
           ...chats[currentChat]
         ]
@@ -244,10 +237,6 @@ async function send() {
     let reply =
       data?.choices?.[0]?.message?.content ||
       "Something went wrong.";
-
-    if (!reply.toLowerCase().includes("want")) {
-      reply += "\n\nWant me to keep going?";
-    }
 
     chats[currentChat].push({ role: "assistant", content: reply });
 
