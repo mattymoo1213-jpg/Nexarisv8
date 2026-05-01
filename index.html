@@ -7,24 +7,32 @@
 <style>
 body {
   margin: 0;
-  display: flex;
   height: 100vh;
   font-family: Arial;
   background: black;
   color: white;
+  overflow: hidden;
 }
 
+/* SIDEBAR */
 #sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
   width: 200px;
+  height: 100%;
   background: #111;
   padding: 10px;
   overflow-y: auto;
+  transform: translateX(0);
   transition: transform 0.3s ease;
+  z-index: 2;
 }
 #sidebar.hidden { transform: translateX(-100%); }
 
+/* TOGGLE BUTTON */
 #toggleBtn {
-  position: absolute;
+  position: fixed;
   top: 10px;
   left: 210px;
   background: white;
@@ -32,28 +40,49 @@ body {
   padding: 5px 8px;
   cursor: pointer;
   border-radius: 5px;
+  z-index: 3;
+  transition: left 0.3s ease;
 }
 #toggleBtn.hidden { left: 10px; }
 
+/* MODE BUTTON */
+#modeBtn {
+  margin-top: 10px;
+  padding: 8px;
+  background: #222;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: center;
+}
+
+/* MAIN */
+#main {
+  position: absolute;
+  left: 200px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  transition: left 0.3s ease;
+}
+#main.full { left: 0; }
+
+/* CHAT LIST */
 .chat-tab {
   padding: 10px;
   margin-bottom: 5px;
   background: #222;
   cursor: pointer;
   border-radius: 5px;
-  color: white;
 }
 .chat-tab.active {
   background: white;
   color: black;
 }
 
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
+/* CHAT */
 #chat {
   flex: 1;
   padding: 15px;
@@ -63,29 +92,29 @@ body {
   gap: 12px;
 }
 
+/* USER */
 .user {
   align-self: flex-end;
   background: #444;
-  color: white;
   padding: 10px 14px;
   border-radius: 15px;
   max-width: 70%;
 }
 
+/* AI (no bubble) */
 .ai {
   align-self: flex-start;
-  color: white;
   max-width: 100%;
   line-height: 1.5;
 }
 
+/* INPUT */
 #inputArea {
   display: flex;
   padding: 10px;
   gap: 10px;
   border-top: 1px solid #333;
 }
-
 input {
   flex: 1;
   padding: 10px;
@@ -93,7 +122,6 @@ input {
   color: white;
   border: 1px solid #333;
 }
-
 button {
   padding: 10px;
   background: white;
@@ -107,6 +135,7 @@ button {
 
 <div id="sidebar">
   <button onclick="newChat()">+ New Chat</button>
+  <div id="modeBtn" onclick="toggleMode()">Mode: Fast ⚡</div>
   <div id="chatList"></div>
 </div>
 
@@ -125,6 +154,14 @@ button {
 
 const API_KEY = "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";
 
+let mode = "fast";
+
+function toggleMode() {
+  mode = mode === "fast" ? "smart" : "fast";
+  document.getElementById("modeBtn").innerText =
+    mode === "fast" ? "Mode: Fast ⚡" : "Mode: Smart ✨";
+}
+
 function sanitize(text) {
   return text.replace(/gsk_[A-Za-z0-9]+/g, "[hidden]");
 }
@@ -133,15 +170,18 @@ let chats = {};
 let currentChat = "General";
 chats[currentChat] = [];
 
-/* TOGGLE SIDEBAR */
+/* SIDEBAR TOGGLE */
 function toggleSidebar() {
   const sidebar = document.getElementById("sidebar");
   const btn = document.getElementById("toggleBtn");
+  const main = document.getElementById("main");
 
-  sidebar.classList.toggle("hidden");
+  const hidden = sidebar.classList.toggle("hidden");
+
+  main.classList.toggle("full", hidden);
   btn.classList.toggle("hidden");
 
-  btn.innerText = sidebar.classList.contains("hidden") ? "▶" : "◀";
+  btn.innerText = hidden ? "▶" : "◀";
 }
 
 /* CHAT LIST */
@@ -186,10 +226,16 @@ function newChat() {
   renderMessages();
 }
 
-/* AUTO NAME */
+/* AUTO NAME (SAFE) */
 function autoNameChat(firstMessage) {
-  const words = firstMessage.split(" ").slice(0, 3).join(" ");
-  const newName = words || "Chat";
+  let base = firstMessage.split(" ").slice(0, 3).join(" ") || "Chat";
+  let newName = base;
+  let i = 1;
+
+  while (chats[newName]) {
+    newName = base + " " + i;
+    i++;
+  }
 
   chats[newName] = chats[currentChat];
   delete chats[currentChat];
@@ -225,7 +271,10 @@ async function send() {
         messages: [
           {
             role: "system",
-            content: "Keep responses short, clear, and natural. Do not ask follow-up questions unless necessary."
+            content:
+              mode === "fast"
+                ? "Keep responses short, clear, and direct."
+                : "Be helpful, slightly expressive, and detailed when useful. Keep it natural."
           },
           ...chats[currentChat]
         ]
