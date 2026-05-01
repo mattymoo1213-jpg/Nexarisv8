@@ -1,47 +1,158 @@
-<!DOCTYPE html>
+gsk_<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexaris Chat</title>
+<title>Nexaris</title>
+
+<style>
+body {
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  font-family: Arial;
+  background: #000;
+  color: #00ffcc;
+}
+
+/* SIDEBAR */
+#sidebar {
+  width: 200px;
+  background: #111;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.chat-tab {
+  padding: 10px;
+  margin-bottom: 5px;
+  background: #222;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.chat-tab.active {
+  background: #00ffcc;
+  color: black;
+}
+
+/* MAIN CHAT */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#chat {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* BUBBLES */
+.user {
+  align-self: flex-end;
+  background: #00ffcc;
+  color: black;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 70%;
+}
+
+.ai {
+  align-self: flex-start;
+  background: #222;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 70%;
+}
+
+/* INPUT */
+#inputArea {
+  display: flex;
+  padding: 10px;
+  gap: 10px;
+  border-top: 1px solid #333;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+}
+
+button {
+  padding: 10px;
+}
+</style>
+
 </head>
 
-<body style="background:black;color:#00ffcc;font-family:Arial;display:flex;flex-direction:column;height:100vh;margin:0;">
+<body>
 
-<!-- CHAT AREA -->
-<div id="chat" style="flex:1;overflow-y:auto;padding:10px;"></div>
+<div id="sidebar">
+  <button onclick="newChat()">+ New Chat</button>
+  <div id="chatList"></div>
+</div>
 
-<!-- INPUT AREA -->
-<div style="display:flex;padding:10px;gap:10px;">
-  <input id="input" placeholder="Type..." style="flex:1;padding:10px;">
-  <button onclick="send()" style="padding:10px;">Send</button>
+<div id="main">
+  <div id="chat"></div>
+
+  <div id="inputArea">
+    <input id="input" placeholder="Ask something...">
+    <button onclick="send()">Send</button>
+  </div>
 </div>
 
 <script>
 
 const API_KEY = "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";
 
-const chat = document.getElementById("chat");
+let chats = {};
+let currentChat = "default";
 
-let messages = [
-  {
-    role: "system",
-    content: "You are Nexaris, a helpful AI assistant."
-  }
-];
+chats[currentChat] = [];
 
-// 🧠 add message to UI
-function addMessage(role, text) {
-  const div = document.createElement("div");
-  div.style.margin = "10px 0";
-  div.style.whiteSpace = "pre-wrap";
+function renderChatList() {
+  const list = document.getElementById("chatList");
+  list.innerHTML = "";
 
-  div.innerHTML =
-    role === "user"
-      ? "🧑 You: " + text
-      : "🤖 AI: " + text;
+  Object.keys(chats).forEach(name => {
+    const div = document.createElement("div");
+    div.className = "chat-tab" + (name === currentChat ? " active" : "");
+    div.innerText = name;
+    div.onclick = () => {
+      currentChat = name;
+      renderChatList();
+      renderMessages();
+    };
+    list.appendChild(div);
+  });
+}
 
-  chat.appendChild(div);
+function renderMessages() {
+  const chat = document.getElementById("chat");
+  chat.innerHTML = "";
+
+  chats[currentChat].forEach(m => {
+    const div = document.createElement("div");
+    div.className = m.role === "user" ? "user" : "ai";
+    div.innerText = m.content;
+    chat.appendChild(div);
+  });
+
   chat.scrollTop = chat.scrollHeight;
+}
+
+function newChat() {
+  const name = prompt("Chat name:");
+  if (!name) return;
+
+  chats[name] = [];
+  currentChat = name;
+  renderChatList();
+  renderMessages();
 }
 
 async function send() {
@@ -51,9 +162,8 @@ async function send() {
 
   input.value = "";
 
-  addMessage("user", text);
-
-  messages.push({ role: "user", content: text });
+  chats[currentChat].push({ role: "user", content: text });
+  renderMessages();
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -63,7 +173,7 @@ async function send() {
     },
     body: JSON.stringify({
       model: "llama-3.1-8b-instant",
-      messages: messages
+      messages: chats[currentChat]
     })
   });
 
@@ -71,12 +181,15 @@ async function send() {
 
   const reply =
     data?.choices?.[0]?.message?.content ||
-    "Error getting response";
+    "Error";
 
-  messages.push({ role: "assistant", content: reply });
+  chats[currentChat].push({ role: "assistant", content: reply });
 
-  addMessage("assistant", reply);
+  renderMessages();
 }
+
+renderChatList();
+renderMessages();
 
 </script>
 
