@@ -1,4 +1,4 @@
-gsk_<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +14,6 @@ body {
   color: #00ffcc;
 }
 
-/* SIDEBAR */
 #sidebar {
   width: 200px;
   background: #111;
@@ -35,7 +34,6 @@ body {
   color: black;
 }
 
-/* MAIN CHAT */
 #main {
   flex: 1;
   display: flex;
@@ -51,7 +49,6 @@ body {
   gap: 10px;
 }
 
-/* BUBBLES */
 .user {
   align-self: flex-end;
   background: #00ffcc;
@@ -69,7 +66,6 @@ body {
   max-width: 70%;
 }
 
-/* INPUT */
 #inputArea {
   display: flex;
   padding: 10px;
@@ -86,7 +82,6 @@ button {
   padding: 10px;
 }
 </style>
-
 </head>
 
 <body>
@@ -107,8 +102,10 @@ button {
 
 <script>
 
+// 🔒 ONLY PLACE YOUR KEY HERE
 const API_KEY = "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";
 
+// 🧠 chat storage
 let chats = {};
 let currentChat = "default";
 
@@ -138,7 +135,10 @@ function renderMessages() {
   chats[currentChat].forEach(m => {
     const div = document.createElement("div");
     div.className = m.role === "user" ? "user" : "ai";
-    div.innerText = m.content;
+
+    // 🔒 NEVER render anything except message content
+    div.textContent = m.content;
+
     chat.appendChild(div);
   });
 
@@ -157,7 +157,7 @@ function newChat() {
 
 async function send() {
   const input = document.getElementById("input");
-  const text = input.value;
+  const text = input.value.trim();
   if (!text) return;
 
   input.value = "";
@@ -165,27 +165,37 @@ async function send() {
   chats[currentChat].push({ role: "user", content: text });
   renderMessages();
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + API_KEY
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      messages: chats[currentChat]
-    })
-  });
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + API_KEY
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: chats[currentChat]
+      })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  const reply =
-    data?.choices?.[0]?.message?.content ||
-    "Error";
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      "Something went wrong.";
 
-  chats[currentChat].push({ role: "assistant", content: reply });
+    chats[currentChat].push({ role: "assistant", content: reply });
 
-  renderMessages();
+    renderMessages();
+
+  } catch (e) {
+    chats[currentChat].push({
+      role: "assistant",
+      content: "Connection error."
+    });
+
+    renderMessages();
+  }
 }
 
 renderChatList();
