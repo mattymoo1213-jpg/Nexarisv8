@@ -14,13 +14,39 @@ body {
   color: #00ffcc;
 }
 
+/* SIDEBAR */
 #sidebar {
   width: 200px;
   background: #111;
   padding: 10px;
   overflow-y: auto;
+  transition: transform 0.3s ease;
 }
 
+/* hidden state */
+#sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+/* TOGGLE BUTTON */
+#toggleBtn {
+  position: absolute;
+  top: 10px;
+  left: 210px;
+  background: #00ffcc;
+  color: black;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: left 0.3s ease;
+}
+
+/* when sidebar hidden, move button */
+#toggleBtn.hidden {
+  left: 10px;
+}
+
+/* CHAT LIST */
 .chat-tab {
   padding: 10px;
   margin-bottom: 5px;
@@ -34,6 +60,7 @@ body {
   color: black;
 }
 
+/* MAIN */
 #main {
   flex: 1;
   display: flex;
@@ -49,6 +76,7 @@ body {
   gap: 10px;
 }
 
+/* BUBBLES */
 .user {
   align-self: flex-end;
   background: #00ffcc;
@@ -66,6 +94,7 @@ body {
   max-width: 70%;
 }
 
+/* INPUT */
 #inputArea {
   display: flex;
   padding: 10px;
@@ -86,11 +115,16 @@ button {
 
 <body>
 
+<!-- SIDEBAR -->
 <div id="sidebar">
   <button onclick="newChat()">+ New Chat</button>
   <div id="chatList"></div>
 </div>
 
+<!-- TOGGLE BUTTON -->
+<div id="toggleBtn" onclick="toggleSidebar()">◀</div>
+
+<!-- MAIN -->
 <div id="main">
   <div id="chat"></div>
 
@@ -102,15 +136,26 @@ button {
 
 <script>
 
-// 🔒 ONLY PLACE YOUR KEY HERE
 const API_KEY = "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";
 
-// 🧠 chat storage
 let chats = {};
 let currentChat = "default";
 
 chats[currentChat] = [];
 
+/* TOGGLE SIDEBAR */
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const btn = document.getElementById("toggleBtn");
+
+  sidebar.classList.toggle("hidden");
+  btn.classList.toggle("hidden");
+
+  // change arrow direction
+  btn.innerText = sidebar.classList.contains("hidden") ? "▶" : "◀";
+}
+
+/* CHAT LIST */
 function renderChatList() {
   const list = document.getElementById("chatList");
   list.innerHTML = "";
@@ -128,6 +173,7 @@ function renderChatList() {
   });
 }
 
+/* MESSAGES */
 function renderMessages() {
   const chat = document.getElementById("chat");
   chat.innerHTML = "";
@@ -135,16 +181,14 @@ function renderMessages() {
   chats[currentChat].forEach(m => {
     const div = document.createElement("div");
     div.className = m.role === "user" ? "user" : "ai";
-
-    // 🔒 NEVER render anything except message content
     div.textContent = m.content;
-
     chat.appendChild(div);
   });
 
   chat.scrollTop = chat.scrollHeight;
 }
 
+/* NEW CHAT */
 function newChat() {
   const name = prompt("Chat name:");
   if (!name) return;
@@ -155,6 +199,7 @@ function newChat() {
   renderMessages();
 }
 
+/* SEND */
 async function send() {
   const input = document.getElementById("input");
   const text = input.value.trim();
@@ -188,7 +233,7 @@ async function send() {
 
     renderMessages();
 
-  } catch (e) {
+  } catch {
     chats[currentChat].push({
       role: "assistant",
       content: "Connection error."
