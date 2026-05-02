@@ -24,14 +24,13 @@ body {
   background: #111;
   padding: 10px;
   overflow-y: auto;
-  transform: translateX(0);
   transition: transform 0.3s ease;
 }
 #sidebar.hidden {
   transform: translateX(-100%);
 }
 
-/* TOGGLE BUTTON */
+/* TOGGLE */
 #toggleBtn {
   position: fixed;
   top: 10px;
@@ -41,11 +40,20 @@ body {
   padding: 5px 8px;
   cursor: pointer;
   border-radius: 5px;
-  z-index: 10;
   transition: left 0.3s ease;
 }
 #toggleBtn.shifted {
   left: 10px;
+}
+
+/* MODE BUTTON */
+#modeBtn {
+  margin-top: 10px;
+  padding: 8px;
+  background: #222;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
 }
 
 /* MAIN */
@@ -76,7 +84,7 @@ body {
   color: black;
 }
 
-/* CHAT */
+/* CHAT AREA */
 #chat {
   flex: 1;
   padding: 15px;
@@ -95,13 +103,14 @@ body {
   max-width: 70%;
 }
 
-/* AI */
+/* AI (no bubble) */
 .ai {
   align-self: flex-start;
   max-width: 100%;
   line-height: 1.6;
+  font-size: 16px;
   opacity: 0;
-  animation: fadeIn 0.3s ease forwards;
+  animation: fadeIn 0.25s ease forwards;
 }
 
 @keyframes fadeIn {
@@ -115,6 +124,7 @@ body {
   gap: 10px;
   border-top: 1px solid #333;
 }
+
 input {
   flex: 1;
   padding: 10px;
@@ -122,6 +132,7 @@ input {
   color: white;
   border: 1px solid #333;
 }
+
 button {
   padding: 10px;
   background: white;
@@ -135,6 +146,7 @@ button {
 
 <div id="sidebar">
   <button onclick="newChat()">+ New Chat</button>
+  <div id="modeBtn">Mode: Fast ⚡</div>
   <div id="chatList"></div>
 </div>
 
@@ -153,11 +165,13 @@ button {
 
 const API_KEY = "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";
 
+let mode = "fast";
+
 let chats = {};
 let currentChat = "General";
 chats[currentChat] = [];
 
-/* SAFE TOGGLE (EVENT LISTENER VERSION) */
+/* SIDEBAR TOGGLE */
 document.getElementById("toggleBtn").addEventListener("click", () => {
   const sidebar = document.getElementById("sidebar");
   const main = document.getElementById("main");
@@ -169,6 +183,13 @@ document.getElementById("toggleBtn").addEventListener("click", () => {
   btn.classList.toggle("shifted", hidden);
 
   btn.innerText = hidden ? "▶" : "◀";
+});
+
+/* MODE TOGGLE */
+document.getElementById("modeBtn").addEventListener("click", () => {
+  mode = mode === "fast" ? "smart" : "fast";
+  document.getElementById("modeBtn").innerText =
+    mode === "fast" ? "Mode: Fast ⚡" : "Mode: Smart ✨";
 });
 
 /* CHAT LIST */
@@ -189,6 +210,22 @@ function renderChatList() {
   });
 }
 
+/* TYPE EFFECT */
+function typeText(el, text) {
+  let i = 0;
+  el.textContent = "";
+
+  function type() {
+    if (i < text.length) {
+      el.textContent += text[i];
+      i++;
+      setTimeout(type, 8);
+    }
+  }
+
+  type();
+}
+
 /* MESSAGES */
 function renderMessages() {
   const chat = document.getElementById("chat");
@@ -197,7 +234,13 @@ function renderMessages() {
   chats[currentChat].forEach(m => {
     const div = document.createElement("div");
     div.className = m.role === "user" ? "user" : "ai";
-    div.textContent = m.content;
+
+    if (m.role === "assistant") {
+      typeText(div, m.content);
+    } else {
+      div.textContent = m.content;
+    }
+
     chat.appendChild(div);
   });
 
@@ -213,6 +256,24 @@ function newChat() {
   renderMessages();
 }
 
+/* AUTO NAME */
+function autoNameChat(text) {
+  let base = text.split(" ").slice(0, 3).join(" ") || "Chat";
+  let newName = base;
+  let i = 1;
+
+  while (chats[newName]) {
+    newName = base + " " + i;
+    i++;
+  }
+
+  chats[newName] = chats[currentChat];
+  delete chats[currentChat];
+  currentChat = newName;
+
+  renderChatList();
+}
+
 /* SEND */
 async function send() {
   const input = document.getElementById("input");
@@ -220,6 +281,10 @@ async function send() {
   if (!text) return;
 
   input.value = "";
+
+  if (chats[currentChat].length === 0) {
+    autoNameChat(text);
+  }
 
   chats[currentChat].push({ role: "user", content: text });
   renderMessages();
@@ -233,13 +298,22 @@ async function send() {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        messages: chats[currentChat]
+        messages: [
+          {
+            role: "system",
+            content:
+              mode === "fast"
+                ? "Keep responses short and clear."
+                : "Be natural, slightly expressive, and easy to read. Use light emojis occasionally when appropriate."
+          },
+          ...chats[currentChat]
+        ]
       })
     });
 
     const data = await res.json();
 
-    const reply =
+    let reply =
       data?.choices?.[0]?.message?.content ||
       "Something went wrong.";
 
