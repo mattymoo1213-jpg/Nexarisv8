@@ -27,9 +27,11 @@ body {
   transform: translateX(0);
   transition: transform 0.3s ease;
 }
-#sidebar.hidden { transform: translateX(-100%); }
+#sidebar.hidden {
+  transform: translateX(-100%);
+}
 
-/* TOGGLE */
+/* TOGGLE BUTTON */
 #toggleBtn {
   position: fixed;
   top: 10px;
@@ -39,18 +41,11 @@ body {
   padding: 5px 8px;
   cursor: pointer;
   border-radius: 5px;
+  z-index: 10;
   transition: left 0.3s ease;
 }
-#toggleBtn.hidden { left: 10px; }
-
-/* MODE BUTTON */
-#modeBtn {
-  margin-top: 10px;
-  padding: 8px;
-  background: #222;
-  border-radius: 5px;
-  cursor: pointer;
-  text-align: center;
+#toggleBtn.shifted {
+  left: 10px;
 }
 
 /* MAIN */
@@ -64,7 +59,9 @@ body {
   flex-direction: column;
   transition: left 0.3s ease;
 }
-#main.full { left: 0; }
+#main.full {
+  left: 0;
+}
 
 /* CHAT LIST */
 .chat-tab {
@@ -98,12 +95,11 @@ body {
   max-width: 70%;
 }
 
-/* AI (no bubble) */
+/* AI */
 .ai {
   align-self: flex-start;
   max-width: 100%;
   line-height: 1.6;
-  font-size: 16px;
   opacity: 0;
   animation: fadeIn 0.3s ease forwards;
 }
@@ -139,11 +135,10 @@ button {
 
 <div id="sidebar">
   <button onclick="newChat()">+ New Chat</button>
-  <div id="modeBtn" onclick="toggleMode()">Mode: Fast ⚡</div>
   <div id="chatList"></div>
 </div>
 
-<div id="toggleBtn" onclick="toggleSidebar()">◀</div>
+<div id="toggleBtn">◀</div>
 
 <div id="main">
   <div id="chat"></div>
@@ -158,34 +153,23 @@ button {
 
 const API_KEY = "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";
 
-let mode = "fast";
-
-function toggleMode() {
-  mode = mode === "fast" ? "smart" : "fast";
-  document.getElementById("modeBtn").innerText =
-    mode === "fast" ? "Mode: Fast ⚡" : "Mode: Smart ✨";
-}
-
-function sanitize(text) {
-  return text.replace(/gsk_[A-Za-z0-9]+/g, "[hidden]");
-}
-
 let chats = {};
 let currentChat = "General";
 chats[currentChat] = [];
 
-/* SIDEBAR */
-function toggleSidebar() {
+/* SAFE TOGGLE (EVENT LISTENER VERSION) */
+document.getElementById("toggleBtn").addEventListener("click", () => {
   const sidebar = document.getElementById("sidebar");
-  const btn = document.getElementById("toggleBtn");
   const main = document.getElementById("main");
+  const btn = document.getElementById("toggleBtn");
 
   const hidden = sidebar.classList.toggle("hidden");
+
   main.classList.toggle("full", hidden);
-  btn.classList.toggle("hidden");
+  btn.classList.toggle("shifted", hidden);
 
   btn.innerText = hidden ? "▶" : "◀";
-}
+});
 
 /* CHAT LIST */
 function renderChatList() {
@@ -205,22 +189,6 @@ function renderChatList() {
   });
 }
 
-/* TYPING EFFECT */
-function typeText(element, text) {
-  let i = 0;
-  element.textContent = "";
-
-  function type() {
-    if (i < text.length) {
-      element.textContent += text.charAt(i);
-      i++;
-      setTimeout(type, 10);
-    }
-  }
-
-  type();
-}
-
 /* MESSAGES */
 function renderMessages() {
   const chat = document.getElementById("chat");
@@ -229,13 +197,7 @@ function renderMessages() {
   chats[currentChat].forEach(m => {
     const div = document.createElement("div");
     div.className = m.role === "user" ? "user" : "ai";
-
-    if (m.role === "assistant") {
-      typeText(div, sanitize(m.content));
-    } else {
-      div.textContent = sanitize(m.content);
-    }
-
+    div.textContent = m.content;
     chat.appendChild(div);
   });
 
@@ -251,24 +213,6 @@ function newChat() {
   renderMessages();
 }
 
-/* AUTO NAME */
-function autoNameChat(firstMessage) {
-  let base = firstMessage.split(" ").slice(0, 3).join(" ") || "Chat";
-  let newName = base;
-  let i = 1;
-
-  while (chats[newName]) {
-    newName = base + " " + i;
-    i++;
-  }
-
-  chats[newName] = chats[currentChat];
-  delete chats[currentChat];
-  currentChat = newName;
-
-  renderChatList();
-}
-
 /* SEND */
 async function send() {
   const input = document.getElementById("input");
@@ -276,10 +220,6 @@ async function send() {
   if (!text) return;
 
   input.value = "";
-
-  if (chats[currentChat].length === 0) {
-    autoNameChat(text);
-  }
 
   chats[currentChat].push({ role: "user", content: text });
   renderMessages();
@@ -293,29 +233,15 @@ async function send() {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        messages: [
-          {
-            role: "system",
-            content:
-              mode === "fast"
-                ? "Keep responses short and clear."
-                : "Be engaging, easy to read, and slightly expressive. Use light emojis where natural, but don't overuse them. Format responses with spacing."
-          },
-          ...chats[currentChat]
-        ]
+        messages: chats[currentChat]
       })
     });
 
     const data = await res.json();
 
-    let reply =
+    const reply =
       data?.choices?.[0]?.message?.content ||
       "Something went wrong.";
-
-    // improve readability
-    reply = reply
-      .replace(/\. /g, ".\n\n")
-      .replace(/\n{3,}/g, "\n\n");
 
     chats[currentChat].push({ role: "assistant", content: reply });
 
