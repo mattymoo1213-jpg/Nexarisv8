@@ -26,11 +26,10 @@ body {
   overflow-y: auto;
   transform: translateX(0);
   transition: transform 0.3s ease;
-  z-index: 2;
 }
 #sidebar.hidden { transform: translateX(-100%); }
 
-/* TOGGLE BUTTON */
+/* TOGGLE */
 #toggleBtn {
   position: fixed;
   top: 10px;
@@ -40,7 +39,6 @@ body {
   padding: 5px 8px;
   cursor: pointer;
   border-radius: 5px;
-  z-index: 3;
   transition: left 0.3s ease;
 }
 #toggleBtn.hidden { left: 10px; }
@@ -50,9 +48,8 @@ body {
   margin-top: 10px;
   padding: 8px;
   background: #222;
-  color: white;
-  cursor: pointer;
   border-radius: 5px;
+  cursor: pointer;
   text-align: center;
 }
 
@@ -74,8 +71,8 @@ body {
   padding: 10px;
   margin-bottom: 5px;
   background: #222;
-  cursor: pointer;
   border-radius: 5px;
+  cursor: pointer;
 }
 .chat-tab.active {
   background: white;
@@ -105,7 +102,14 @@ body {
 .ai {
   align-self: flex-start;
   max-width: 100%;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 16px;
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
 }
 
 /* INPUT */
@@ -170,14 +174,13 @@ let chats = {};
 let currentChat = "General";
 chats[currentChat] = [];
 
-/* SIDEBAR TOGGLE */
+/* SIDEBAR */
 function toggleSidebar() {
   const sidebar = document.getElementById("sidebar");
   const btn = document.getElementById("toggleBtn");
   const main = document.getElementById("main");
 
   const hidden = sidebar.classList.toggle("hidden");
-
   main.classList.toggle("full", hidden);
   btn.classList.toggle("hidden");
 
@@ -202,6 +205,22 @@ function renderChatList() {
   });
 }
 
+/* TYPING EFFECT */
+function typeText(element, text) {
+  let i = 0;
+  element.textContent = "";
+
+  function type() {
+    if (i < text.length) {
+      element.textContent += text.charAt(i);
+      i++;
+      setTimeout(type, 10);
+    }
+  }
+
+  type();
+}
+
 /* MESSAGES */
 function renderMessages() {
   const chat = document.getElementById("chat");
@@ -210,7 +229,13 @@ function renderMessages() {
   chats[currentChat].forEach(m => {
     const div = document.createElement("div");
     div.className = m.role === "user" ? "user" : "ai";
-    div.textContent = sanitize(m.content);
+
+    if (m.role === "assistant") {
+      typeText(div, sanitize(m.content));
+    } else {
+      div.textContent = sanitize(m.content);
+    }
+
     chat.appendChild(div);
   });
 
@@ -226,7 +251,7 @@ function newChat() {
   renderMessages();
 }
 
-/* AUTO NAME (SAFE) */
+/* AUTO NAME */
 function autoNameChat(firstMessage) {
   let base = firstMessage.split(" ").slice(0, 3).join(" ") || "Chat";
   let newName = base;
@@ -273,8 +298,8 @@ async function send() {
             role: "system",
             content:
               mode === "fast"
-                ? "Keep responses short, clear, and direct."
-                : "Be helpful, slightly expressive, and detailed when useful. Keep it natural."
+                ? "Keep responses short and clear."
+                : "Be engaging, easy to read, and slightly expressive. Use light emojis where natural, but don't overuse them. Format responses with spacing."
           },
           ...chats[currentChat]
         ]
@@ -286,6 +311,11 @@ async function send() {
     let reply =
       data?.choices?.[0]?.message?.content ||
       "Something went wrong.";
+
+    // improve readability
+    reply = reply
+      .replace(/\. /g, ".\n\n")
+      .replace(/\n{3,}/g, "\n\n");
 
     chats[currentChat].push({ role: "assistant", content: reply });
 
