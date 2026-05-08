@@ -19,7 +19,7 @@ body {
   position: fixed;
   left: 0;
   top: 0;
-  width: 200px;
+  width: 220px;
   height: 100%;
   background: #111;
   padding: 10px;
@@ -34,7 +34,7 @@ body {
 /* MAIN */
 #main {
   position: absolute;
-  left: 200px;
+  left: 220px;
   right: 0;
   top: 0;
   bottom: 0;
@@ -51,13 +51,14 @@ body {
 #toggleBtn {
   position: fixed;
   top: 10px;
-  left: 210px;
+  left: 230px;
   background: white;
   color: black;
   padding: 5px 8px;
   border-radius: 5px;
   cursor: pointer;
   z-index: 999;
+  transition: left 0.3s ease;
 }
 
 /* CHAT */
@@ -81,6 +82,7 @@ body {
 .ai {
   align-self: flex-start;
   max-width: 100%;
+  white-space: pre-wrap;
 }
 
 /* INPUT */
@@ -88,6 +90,7 @@ body {
   display: flex;
   padding: 10px;
   border-top: 1px solid #333;
+  gap: 5px;
 }
 
 input {
@@ -105,14 +108,24 @@ button {
   cursor: pointer;
 }
 
-/* MODE BUTTON */
-#physicsBtn {
-  margin-top: 10px;
+/* SIDE BUTTONS */
+.sideBtn {
+  width: 100%;
+  margin-top: 8px;
   padding: 8px;
   background: #222;
+  color: white;
+  border: none;
   cursor: pointer;
-  text-align: center;
   border-radius: 5px;
+}
+
+/* IMAGE PREVIEW */
+#preview {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
+  display: none;
 }
 </style>
 </head>
@@ -120,8 +133,13 @@ button {
 <body>
 
 <div id="sidebar">
-  <button onclick="newChat()">+ New Chat</button>
-  <div id="physicsBtn">Physics Mode: OFF</div>
+  <button class="sideBtn" onclick="newChat()">+ New Chat</button>
+
+  <div id="modeBtn" class="sideBtn">Smart Mode</div>
+
+  <input type="file" id="imgInput" accept="image/*" class="sideBtn">
+
+  <img id="preview">
 </div>
 
 <div id="toggleBtn">◀</div>
@@ -130,7 +148,7 @@ button {
   <div id="chat"></div>
 
   <div id="inputArea">
-    <input id="input" placeholder="Ask something...">
+    <input id="input" placeholder="Ask or upload fossil question...">
     <button onclick="send()">Send</button>
   </div>
 </div>
@@ -139,25 +157,48 @@ button {
 
 const API_KEY = "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";
 
-let physicsMode = false;
-
+let mode = "smart"; // smart or fast
 let chats = { General: [] };
 let currentChat = "General";
+let lastImageBase64 = null;
 
-/* TOGGLE SIDEBAR */
-document.getElementById("toggleBtn").onclick = () => {
+/* SIDEBAR FIX */
+const toggleBtn = document.getElementById("toggleBtn");
+
+toggleBtn.onclick = () => {
   const sidebar = document.getElementById("sidebar");
   const main = document.getElementById("main");
 
-  sidebar.classList.toggle("hidden");
-  main.classList.toggle("full");
+  const hidden = sidebar.classList.toggle("hidden");
+  main.classList.toggle("full", hidden);
+
+  toggleBtn.innerText = hidden ? "▶" : "◀";
+  toggleBtn.style.left = hidden ? "10px" : "230px";
 };
 
-/* PHYSICS MODE */
-document.getElementById("physicsBtn").onclick = () => {
-  physicsMode = !physicsMode;
-  document.getElementById("physicsBtn").innerText =
-    physicsMode ? "Physics Mode: ON 🧠" : "Physics Mode: OFF";
+/* SMART / FAST MODE */
+document.getElementById("modeBtn").onclick = () => {
+  mode = mode === "smart" ? "fast" : "smart";
+  document.getElementById("modeBtn").innerText =
+    mode === "smart" ? "Smart Mode" : "Fast Mode ⚡";
+};
+
+/* IMAGE UPLOAD */
+document.getElementById("imgInput").onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    lastImageBase64 = reader.result;
+
+    const img = document.getElementById("preview");
+    img.src = lastImageBase64;
+    img.style.display = "block";
+  };
+
+  reader.readAsDataURL(file);
 };
 
 /* CHAT RENDER */
@@ -183,16 +224,39 @@ function newChat() {
   render();
 }
 
-/* SEND MESSAGE */
+/* SEND */
 async function send() {
   const input = document.getElementById("input");
   const text = input.value.trim();
-  if (!text) return;
+  if (!text && !lastImageBase64) return;
 
   input.value = "";
 
-  chats[currentChat].push({ role: "user", content: text });
+  let userMessage = text;
+
+  if (lastImageBase64) {
+    userMessage += "\n[User uploaded an image for fossil/object identification]";
+  }
+
+  chats[currentChat].push({ role: "user", content: userMessage });
   render();
+
+  const systemPrompt =
+    mode === "smart"
+      ? "You are Nexaris. You give detailed, accurate, thoughtful answers and can explain physics, math, science, and fossils clearly."
+      : "You are Nexaris. You respond quickly and concisely with short helpful answers.";
+
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...chats[currentChat]
+  ];
+
+  if (lastImageBase64) {
+    messages.push({
+      role: "user",
+      content: "Image data (base64): " + lastImageBase64
+    });
+  }
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -202,15 +266,7 @@ async function send() {
     },
     body: JSON.stringify({
       model: "llama-3.1-8b-instant",
-      messages: [
-        {
-          role: "system",
-          content: physicsMode
-            ? "You are Nexaris in PHYSICS MODE. You explain force, motion, energy, momentum, stress, and material strength for safe engineering and design improvement."
-            : "You are Nexaris, a helpful AI assistant."
-        },
-        ...chats[currentChat]
-      ]
+      messages
     })
   });
 
@@ -223,6 +279,9 @@ async function send() {
   chats[currentChat].push({ role: "assistant", content: reply });
 
   render();
+
+  lastImageBase64 = null;
+  document.getElementById("preview").style.display = "none";
 }
 
 render();
