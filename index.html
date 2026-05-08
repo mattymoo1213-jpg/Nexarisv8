@@ -7,10 +7,10 @@
 <style>
 body {
   margin: 0;
-  height: 100vh;
   font-family: Arial;
   background: black;
   color: white;
+  height: 100vh;
   overflow: hidden;
 }
 
@@ -23,15 +23,15 @@ body {
   height: 100%;
   background: #111;
   padding: 10px;
-  overflow-y: auto;
   transition: transform 0.3s ease;
+  overflow-y: auto;
 }
 
 #sidebar.hidden {
   transform: translateX(-100%);
 }
 
-/* MAIN AREA */
+/* MAIN */
 #main {
   position: absolute;
   left: 200px;
@@ -47,7 +47,7 @@ body {
   left: 0;
 }
 
-/* TOGGLE BUTTON */
+/* TOGGLE */
 #toggleBtn {
   position: fixed;
   top: 10px;
@@ -58,46 +58,35 @@ body {
   border-radius: 5px;
   cursor: pointer;
   z-index: 999;
-  transition: left 0.3s ease;
 }
 
 /* CHAT */
 #chat {
   flex: 1;
-  padding: 15px;
+  padding: 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* USER */
 .user {
   align-self: flex-end;
   background: #444;
-  padding: 10px 14px;
-  border-radius: 15px;
+  padding: 10px;
+  border-radius: 12px;
   max-width: 70%;
 }
 
-/* AI */
 .ai {
   align-self: flex-start;
   max-width: 100%;
-  line-height: 1.6;
-  opacity: 0;
-  animation: fadeIn 0.2s ease forwards;
-}
-
-@keyframes fadeIn {
-  to { opacity: 1; }
 }
 
 /* INPUT */
 #inputArea {
   display: flex;
   padding: 10px;
-  gap: 10px;
   border-top: 1px solid #333;
 }
 
@@ -112,32 +101,18 @@ input {
 button {
   padding: 10px;
   background: white;
-  color: black;
   border: none;
   cursor: pointer;
 }
 
 /* MODE BUTTON */
-#modeBtn {
+#physicsBtn {
   margin-top: 10px;
   padding: 8px;
   background: #222;
-  border-radius: 5px;
   cursor: pointer;
   text-align: center;
-}
-
-/* CHAT TAB */
-.chat-tab {
-  padding: 10px;
-  margin-bottom: 5px;
-  background: #222;
   border-radius: 5px;
-  cursor: pointer;
-}
-.chat-tab.active {
-  background: white;
-  color: black;
 }
 </style>
 </head>
@@ -146,8 +121,7 @@ button {
 
 <div id="sidebar">
   <button onclick="newChat()">+ New Chat</button>
-  <div id="modeBtn">Mode: Fast ⚡</div>
-  <div id="chatList"></div>
+  <div id="physicsBtn">Physics Mode: OFF</div>
 </div>
 
 <div id="toggleBtn">◀</div>
@@ -165,87 +139,36 @@ button {
 
 const API_KEY = "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";
 
-let mode = "fast";
+let physicsMode = false;
 
-let chats = {};
+let chats = { General: [] };
 let currentChat = "General";
-chats[currentChat] = [];
 
-/* TOGGLE SIDEBAR (FIXED) */
-window.addEventListener("DOMContentLoaded", () => {
+/* TOGGLE SIDEBAR */
+document.getElementById("toggleBtn").onclick = () => {
   const sidebar = document.getElementById("sidebar");
   const main = document.getElementById("main");
-  const btn = document.getElementById("toggleBtn");
 
-  let open = true;
+  sidebar.classList.toggle("hidden");
+  main.classList.toggle("full");
+};
 
-  btn.addEventListener("click", () => {
-    open = !open;
+/* PHYSICS MODE */
+document.getElementById("physicsBtn").onclick = () => {
+  physicsMode = !physicsMode;
+  document.getElementById("physicsBtn").innerText =
+    physicsMode ? "Physics Mode: ON 🧠" : "Physics Mode: OFF";
+};
 
-    sidebar.classList.toggle("hidden", !open);
-    main.classList.toggle("full", !open);
-
-    btn.innerText = open ? "◀" : "▶";
-    btn.style.left = open ? "210px" : "10px";
-  });
-
-  /* MODE TOGGLE */
-  document.getElementById("modeBtn").addEventListener("click", () => {
-    mode = mode === "fast" ? "smart" : "fast";
-    document.getElementById("modeBtn").innerText =
-      mode === "fast" ? "Mode: Fast ⚡" : "Mode: Smart ✨";
-  });
-});
-
-/* CHAT LIST */
-function renderChatList() {
-  const list = document.getElementById("chatList");
-  list.innerHTML = "";
-
-  Object.keys(chats).forEach(name => {
-    const div = document.createElement("div");
-    div.className = "chat-tab" + (name === currentChat ? " active" : "");
-    div.textContent = name;
-    div.onclick = () => {
-      currentChat = name;
-      renderChatList();
-      renderMessages();
-    };
-    list.appendChild(div);
-  });
-}
-
-/* TYPE EFFECT */
-function typeText(el, text) {
-  let i = 0;
-  el.textContent = "";
-
-  function type() {
-    if (i < text.length) {
-      el.textContent += text[i];
-      i++;
-      setTimeout(type, 8);
-    }
-  }
-
-  type();
-}
-
-/* MESSAGES */
-function renderMessages() {
+/* CHAT RENDER */
+function render() {
   const chat = document.getElementById("chat");
   chat.innerHTML = "";
 
   chats[currentChat].forEach(m => {
     const div = document.createElement("div");
     div.className = m.role === "user" ? "user" : "ai";
-
-    if (m.role === "assistant") {
-      typeText(div, m.content);
-    } else {
-      div.textContent = m.content;
-    }
-
+    div.textContent = m.content;
     chat.appendChild(div);
   });
 
@@ -257,11 +180,10 @@ function newChat() {
   const name = "Chat " + Object.keys(chats).length;
   chats[name] = [];
   currentChat = name;
-  renderChatList();
-  renderMessages();
+  render();
 }
 
-/* SEND */
+/* SEND MESSAGE */
 async function send() {
   const input = document.getElementById("input");
   const text = input.value.trim();
@@ -270,52 +192,40 @@ async function send() {
   input.value = "";
 
   chats[currentChat].push({ role: "user", content: text });
-  renderMessages();
+  render();
 
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + API_KEY
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          {
-            role: "system",
-            content:
-              mode === "fast"
-                ? "Keep responses short and clear."
-                : "Be natural, slightly expressive, and easy to read. Use light emojis when appropriate."
-          },
-          ...chats[currentChat]
-        ]
-      })
-    });
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + API_KEY
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "system",
+          content: physicsMode
+            ? "You are Nexaris in PHYSICS MODE. You explain force, motion, energy, momentum, stress, and material strength for safe engineering and design improvement."
+            : "You are Nexaris, a helpful AI assistant."
+        },
+        ...chats[currentChat]
+      ]
+    })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    const reply =
-      data?.choices?.[0]?.message?.content ||
-      "Something went wrong.";
+  const reply =
+    data?.choices?.[0]?.message?.content ||
+    "Error getting response.";
 
-    chats[currentChat].push({ role: "assistant", content: reply });
+  chats[currentChat].push({ role: "assistant", content: reply });
 
-    renderMessages();
-
-  } catch {
-    chats[currentChat].push({
-      role: "assistant",
-      content: "Connection error."
-    });
-
-    renderMessages();
-  }
+  render();
 }
 
-renderChatList();
-renderMessages();
+render();
 
 </script>
 
