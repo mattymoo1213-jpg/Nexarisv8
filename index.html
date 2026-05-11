@@ -5,127 +5,129 @@
 <title>Nexaris</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: black;
-  color: white;
-  height: 100vh;
-  overflow: hidden;
+body{
+margin:0;
+font-family:Arial;
+background:black;
+color:white;
+height:100vh;
+overflow:hidden;
 }
 
 /* SIDEBAR */
-#sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 220px;
-  height: 100%;
-  background: #111;
-  padding: 10px;
-  transition: transform 0.3s ease;
-  overflow-y: auto;
+#sidebar{
+position:fixed;
+left:0;
+top:0;
+width:220px;
+height:100%;
+background:#111;
+padding:10px;
+transition:transform .3s ease;
+overflow-y:auto;
 }
 
-#sidebar.hidden {
-  transform: translateX(-100%);
+#sidebar.hidden{
+transform:translateX(-100%);
 }
 
 /* MAIN */
-#main {
-  position: absolute;
-  left: 220px;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  transition: left 0.3s ease;
+#main{
+position:absolute;
+left:220px;
+right:0;
+top:0;
+bottom:0;
+display:flex;
+flex-direction:column;
+transition:left .3s ease;
 }
 
-#main.full {
-  left: 0;
+#main.full{
+left:0;
 }
 
 /* TOGGLE */
-#toggleBtn {
-  position: fixed;
-  top: 10px;
-  left: 230px;
-  background: white;
-  color: black;
-  padding: 5px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  z-index: 999;
-  transition: left 0.3s ease;
+#toggleBtn{
+position:fixed;
+top:10px;
+left:230px;
+background:white;
+color:black;
+padding:5px 8px;
+border-radius:5px;
+cursor:pointer;
+z-index:999;
+transition:left .3s ease;
 }
 
 /* CHAT */
-#chat {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+#chat{
+flex:1;
+padding:10px;
+overflow-y:auto;
+display:flex;
+flex-direction:column;
+gap:10px;
 }
 
-.user {
-  align-self: flex-end;
-  background: #444;
-  padding: 10px;
-  border-radius: 12px;
-  max-width: 70%;
+.user{
+align-self:flex-end;
+background:#444;
+padding:10px;
+border-radius:12px;
+max-width:70%;
+word-wrap:break-word;
 }
 
-.ai {
-  align-self: flex-start;
-  max-width: 100%;
-  white-space: pre-wrap;
+.ai{
+align-self:flex-start;
+max-width:100%;
+white-space:pre-wrap;
+word-wrap:break-word;
 }
 
 /* INPUT */
-#inputArea {
-  display: flex;
-  padding: 10px;
-  border-top: 1px solid #333;
-  gap: 5px;
+#inputArea{
+display:flex;
+padding:10px;
+border-top:1px solid #333;
+gap:5px;
 }
 
-input {
-  flex: 1;
-  padding: 10px;
-  background: #111;
-  color: white;
-  border: 1px solid #333;
+input{
+flex:1;
+padding:10px;
+background:#111;
+color:white;
+border:1px solid #333;
 }
 
-button {
-  padding: 10px;
-  background: white;
-  border: none;
-  cursor: pointer;
+button{
+padding:10px;
+background:white;
+border:none;
+cursor:pointer;
 }
 
-/* SIDE BUTTONS */
-.sideBtn {
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px;
-  background: #222;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
+/* SIDEBAR BUTTONS */
+.sideBtn{
+width:100%;
+margin-top:8px;
+padding:8px;
+background:#222;
+color:white;
+border:none;
+cursor:pointer;
+border-radius:5px;
 }
 
-/* IMAGE PREVIEW */
-#preview {
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 8px;
-  display: none;
+/* IMAGE */
+#preview{
+width:100%;
+margin-top:10px;
+border-radius:8px;
+display:none;
 }
 </style>
 </head>
@@ -133,155 +135,260 @@ button {
 <body>
 
 <div id="sidebar">
-  <button class="sideBtn" onclick="newChat()">+ New Chat</button>
 
-  <div id="modeBtn" class="sideBtn">Smart Mode</div>
+<button class="sideBtn" onclick="newChat()">+ New Chat</button>
 
-  <input type="file" id="imgInput" accept="image/*" class="sideBtn">
+<div id="modeBtn" class="sideBtn">Smart Mode 🧠</div>
 
-  <img id="preview">
+<input type="file" id="imgInput" accept="image/*" class="sideBtn">
+
+<img id="preview">
+
 </div>
 
 <div id="toggleBtn">◀</div>
 
 <div id="main">
-  <div id="chat"></div>
 
-  <div id="inputArea">
-    <input id="input" placeholder="Ask or upload fossil question...">
-    <button onclick="send()">Send</button>
-  </div>
+<div id="chat"></div>
+
+<div id="inputArea">
+<input id="input" placeholder="Message Nexaris...">
+<button onclick="send()">Send</button>
+</div>
+
 </div>
 
 <script>
 
 const API_KEY = "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";
 
-let mode = "smart"; // smart or fast
-let chats = { General: [] };
+let mode = "smart";
+
+let chats = {
+General: []
+};
+
 let currentChat = "General";
+
 let lastImageBase64 = null;
 
-/* SIDEBAR FIX */
+/* SIDEBAR TOGGLE */
 const toggleBtn = document.getElementById("toggleBtn");
 
 toggleBtn.onclick = () => {
-  const sidebar = document.getElementById("sidebar");
-  const main = document.getElementById("main");
 
-  const hidden = sidebar.classList.toggle("hidden");
-  main.classList.toggle("full", hidden);
+const sidebar = document.getElementById("sidebar");
+const main = document.getElementById("main");
 
-  toggleBtn.innerText = hidden ? "▶" : "◀";
-  toggleBtn.style.left = hidden ? "10px" : "230px";
+const hidden = sidebar.classList.toggle("hidden");
+
+main.classList.toggle("full", hidden);
+
+toggleBtn.innerText = hidden ? "▶" : "◀";
+
+toggleBtn.style.left = hidden ? "10px" : "230px";
 };
 
 /* SMART / FAST MODE */
 document.getElementById("modeBtn").onclick = () => {
-  mode = mode === "smart" ? "fast" : "smart";
-  document.getElementById("modeBtn").innerText =
-    mode === "smart" ? "Smart Mode" : "Fast Mode ⚡";
+
+mode = mode === "smart" ? "fast" : "smart";
+
+document.getElementById("modeBtn").innerText =
+mode === "smart"
+? "Smart Mode 🧠"
+: "Fast Mode ⚡";
+
 };
 
 /* IMAGE UPLOAD */
 document.getElementById("imgInput").onchange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
 
-  const reader = new FileReader();
+const file = e.target.files[0];
 
-  reader.onload = () => {
-    lastImageBase64 = reader.result;
+if(!file) return;
 
-    const img = document.getElementById("preview");
-    img.src = lastImageBase64;
-    img.style.display = "block";
-  };
+const reader = new FileReader();
 
-  reader.readAsDataURL(file);
+reader.onload = () => {
+
+lastImageBase64 = reader.result;
+
+const img = document.getElementById("preview");
+
+img.src = lastImageBase64;
+
+img.style.display = "block";
+
 };
 
-/* CHAT RENDER */
-function render() {
-  const chat = document.getElementById("chat");
-  chat.innerHTML = "";
+reader.readAsDataURL(file);
 
-  chats[currentChat].forEach(m => {
-    const div = document.createElement("div");
-    div.className = m.role === "user" ? "user" : "ai";
-    div.textContent = m.content;
-    chat.appendChild(div);
-  });
+};
 
-  chat.scrollTop = chat.scrollHeight;
+/* RENDER CHAT */
+function render(){
+
+const chat = document.getElementById("chat");
+
+chat.innerHTML = "";
+
+chats[currentChat].forEach(m => {
+
+const div = document.createElement("div");
+
+div.className = m.role === "user"
+? "user"
+: "ai";
+
+div.textContent = m.content;
+
+chat.appendChild(div);
+
+});
+
+chat.scrollTop = chat.scrollHeight;
+
 }
 
 /* NEW CHAT */
-function newChat() {
-  const name = "Chat " + Object.keys(chats).length;
-  chats[name] = [];
-  currentChat = name;
-  render();
+function newChat(){
+
+const name =
+"Chat " + Object.keys(chats).length;
+
+chats[name] = [];
+
+currentChat = name;
+
+render();
+
 }
 
-/* SEND */
-async function send() {
-  const input = document.getElementById("input");
-  const text = input.value.trim();
-  if (!text && !lastImageBase64) return;
+/* SEND MESSAGE */
+async function send(){
 
-  input.value = "";
+const input =
+document.getElementById("input");
 
-  let userMessage = text;
+const text = input.value.trim();
 
-  if (lastImageBase64) {
-    userMessage += "\n[User uploaded an image for fossil/object identification]";
-  }
+if(!text && !lastImageBase64) return;
 
-  chats[currentChat].push({ role: "user", content: userMessage });
-  render();
+input.value = "";
 
-  const systemPrompt =
-    mode === "smart"
-      ? "You are Nexaris. You give detailed, accurate, thoughtful answers and can explain physics, math, science, and fossils clearly."
-      : "You are Nexaris. You respond quickly and concisely with short helpful answers.";
+let userMessage = text;
 
-  const messages = [
-    { role: "system", content: systemPrompt },
-    ...chats[currentChat]
-  ];
+if(lastImageBase64){
 
-  if (lastImageBase64) {
-    messages.push({
-      role: "user",
-      content: "Image data (base64): " + lastImageBase64
-    });
-  }
+userMessage +=
+"\n[User uploaded an image for analysis/identification]";
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + API_KEY
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      messages
-    })
-  });
+}
 
-  const data = await res.json();
+chats[currentChat].push({
+role:"user",
+content:userMessage
+});
 
-  const reply =
-    data?.choices?.[0]?.message?.content ||
-    "Error getting response.";
+render();
 
-  chats[currentChat].push({ role: "assistant", content: reply });
+const systemPrompt =
+mode === "smart"
 
-  render();
+? `You are Nexaris, a smart AI assistant.
 
-  lastImageBase64 = null;
-  document.getElementById("preview").style.display = "none";
+You can:
+- chat naturally
+- explain science, math, physics, and coding
+- identify fossils, rocks, objects, plants, or animals from uploaded images
+- answer clearly and accurately
+
+Keep responses engaging, intelligent, and easy to read.`
+
+: `You are Nexaris.
+
+Respond quickly and concisely while still being helpful.`;
+
+const messages = [
+
+{
+role:"system",
+content:systemPrompt
+},
+
+...chats[currentChat]
+
+];
+
+if(lastImageBase64){
+
+messages.push({
+role:"user",
+content:"Image data: " + lastImageBase64
+});
+
+}
+
+try{
+
+const res = await fetch(
+"https://api.groq.com/openai/v1/chat/completions",
+{
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + API_KEY
+},
+
+body:JSON.stringify({
+
+model:"llama-3.1-8b-instant",
+
+messages
+
+})
+
+}
+);
+
+const data = await res.json();
+
+console.log(data);
+
+const reply =
+data?.choices?.[0]?.message?.content
+||
+data?.error?.message
+||
+"No response from AI.";
+
+chats[currentChat].push({
+role:"assistant",
+content:reply
+});
+
+render();
+
+}catch(err){
+
+console.error(err);
+
+chats[currentChat].push({
+role:"assistant",
+content:"Connection error."
+});
+
+render();
+
+}
+
+lastImageBase64 = null;
+
+document.getElementById("preview").style.display = "none";
+
 }
 
 render();
