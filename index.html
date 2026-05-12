@@ -201,7 +201,22 @@ Send
 </div>
 
 <script>
+const savedChats =
+localStorage.getItem("nexaris_chats");
 
+const savedCurrent =
+localStorage.getItem("nexaris_current");
+
+let chats = { General: [] };
+let currentChat = "General";
+
+if(savedChats){
+chats = JSON.parse(savedChats);
+}
+
+if(savedCurrent){
+currentChat = savedCurrent;
+}
 /* API KEY */
 
 const API_KEY = "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";
