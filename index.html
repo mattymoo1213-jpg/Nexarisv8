@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nexaris</title>
 
@@ -21,14 +22,14 @@ overflow:hidden;
 position:fixed;
 top:0;
 left:0;
-width:220px;
+width:260px;
 height:100%;
 background:#111;
 padding:10px;
 box-sizing:border-box;
-transition:transform .3s ease;
 overflow-y:auto;
-z-index:10;
+transition:transform .3s ease;
+z-index:20;
 }
 
 #sidebar.hidden{
@@ -39,7 +40,7 @@ transform:translateX(-100%);
 
 #main{
 position:absolute;
-left:220px;
+left:260px;
 right:0;
 top:0;
 bottom:0;
@@ -52,20 +53,73 @@ transition:left .3s ease;
 left:0;
 }
 
-/* TOGGLE BUTTON */
+/* TOGGLE */
 
 #toggleBtn{
 position:fixed;
 top:10px;
-left:230px;
+left:270px;
 z-index:999;
 background:white;
 color:black;
 border:none;
 padding:6px 10px;
-border-radius:5px;
+border-radius:6px;
 cursor:pointer;
 transition:left .3s ease;
+}
+
+/* SIDEBAR BUTTONS */
+
+.sideBtn{
+width:100%;
+margin-top:8px;
+padding:10px;
+background:#222;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* SEARCH */
+
+#search{
+width:100%;
+padding:10px;
+margin-top:10px;
+background:#111;
+color:white;
+border:1px solid #333;
+box-sizing:border-box;
+}
+
+/* CHAT LIST */
+
+.chatItem{
+background:#1b1b1b;
+padding:8px;
+margin-top:6px;
+border-radius:6px;
+cursor:pointer;
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-size:14px;
+}
+
+.chatItem:hover{
+background:#2b2b2b;
+}
+
+.deleteBtn{
+background:red;
+color:white;
+border:none;
+padding:3px 6px;
+border-radius:4px;
+cursor:pointer;
+font-size:12px;
 }
 
 /* CHAT */
@@ -79,18 +133,18 @@ flex-direction:column;
 gap:10px;
 }
 
-/* USER MESSAGE */
+/* USER */
 
 .user{
 align-self:flex-end;
 background:#444;
 padding:10px;
-border-radius:12px;
-max-width:70%;
+border-radius:14px;
+max-width:75%;
 word-wrap:break-word;
 }
 
-/* AI MESSAGE */
+/* AI */
 
 .ai{
 align-self:flex-start;
@@ -103,48 +157,60 @@ word-wrap:break-word;
 
 #inputArea{
 display:flex;
-gap:5px;
+align-items:center;
+gap:8px;
 padding:10px;
 border-top:1px solid #333;
+}
+
+/* PLUS BUTTON */
+
+#plusBtn{
+width:45px;
+height:45px;
+border-radius:50%;
+background:#222;
+color:white;
+font-size:26px;
+border:none;
+cursor:pointer;
+flex-shrink:0;
 }
 
 /* INPUT */
 
 #input{
 flex:1;
-padding:10px;
+padding:12px;
 background:#111;
 color:white;
 border:1px solid #333;
+border-radius:10px;
 }
 
-/* BUTTONS */
+/* SEND */
 
-button{
-padding:10px;
-border:none;
-cursor:pointer;
+#sendBtn{
+padding:12px;
 background:white;
 color:black;
-border-radius:5px;
+border:none;
+border-radius:10px;
+cursor:pointer;
 }
 
-/* SIDEBAR BUTTONS */
+/* IMAGE PREVIEW */
 
-.sideBtn{
-width:100%;
-margin-top:8px;
-background:#222;
-color:white;
+#imagePreviewContainer{
+padding-left:10px;
+padding-bottom:10px;
 }
-
-/* IMAGE */
 
 #preview{
-width:100%;
-margin-top:10px;
-border-radius:8px;
+max-width:120px;
+border-radius:12px;
 display:none;
+border:1px solid #333;
 }
 
 </style>
@@ -156,28 +222,32 @@ display:none;
 
 <div id="sidebar">
 
-<button class="sideBtn" onclick="newChat()">
+<button
+class="sideBtn"
+id="newChatBtn">
 + New Chat
 </button>
 
-<button id="modeBtn" class="sideBtn">
+<button
+class="sideBtn"
+id="modeBtn">
 Smart Mode 🧠
 </button>
 
 <input
-type="file"
-id="imgInput"
-accept="image/*"
-class="sideBtn"
+id="search"
+placeholder="Search chats..."
 />
 
-<img id="preview">
+<div id="chatList"></div>
 
 </div>
 
 <!-- TOGGLE -->
 
-<button id="toggleBtn">◀</button>
+<button id="toggleBtn">
+◀
+</button>
 
 <!-- MAIN -->
 
@@ -185,7 +255,23 @@ class="sideBtn"
 
 <div id="chat"></div>
 
+<div id="imagePreviewContainer">
+<img id="preview">
+</div>
+
 <div id="inputArea">
+
+<button id="plusBtn">
+＋
+</button>
+
+<input
+id="imgInput"
+type="file"
+accept="image/*"
+capture="environment"
+hidden
+/>
 
 <input
 id="input"
@@ -201,25 +287,48 @@ Send
 </div>
 
 <script>
+
+/* LOAD STORAGE */
+
 const savedChats =
-localStorage.getItem("nexaris_chats");
+localStorage.getItem(
+"nexaris_chats"
+);
 
 const savedCurrent =
-localStorage.getItem("nexaris_current");
+localStorage.getItem(
+"nexaris_current"
+);
 
-let chats = { General: [] };
-let currentChat = "General";
+let chats =
+savedChats
+? JSON.parse(savedChats)
+: {};
 
-if(savedChats){
-chats = JSON.parse(savedChats);
+let currentChat =
+savedCurrent || null;
+
+/* FIRST CHAT */
+
+if(
+Object.keys(chats).length
+=== 0
+){
+
+chats["New Chat"] = {
+messages:[],
+pinned:false
+};
+
+currentChat =
+"New Chat";
+
 }
 
-if(savedCurrent){
-currentChat = savedCurrent;
-}
 /* API KEY */
 
-const API_KEY = "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";
+const API_KEY =
+"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";
 
 /* MODE */
 
@@ -229,36 +338,73 @@ let mode = "smart";
 
 let lastImageBase64 = null;
 
-/* CHATS */
-
-let chats = {
-General:[]
-};
-
-let currentChat = "General";
-
 /* ELEMENTS */
 
 const chat =
-document.getElementById("chat");
+document.getElementById(
+"chat"
+);
 
 const input =
-document.getElementById("input");
+document.getElementById(
+"input"
+);
 
 const sendBtn =
-document.getElementById("sendBtn");
+document.getElementById(
+"sendBtn"
+);
 
 const toggleBtn =
-document.getElementById("toggleBtn");
+document.getElementById(
+"toggleBtn"
+);
 
 const sidebar =
-document.getElementById("sidebar");
+document.getElementById(
+"sidebar"
+);
 
 const main =
-document.getElementById("main");
+document.getElementById(
+"main"
+);
 
 const modeBtn =
-document.getElementById("modeBtn");
+document.getElementById(
+"modeBtn"
+);
+
+const chatList =
+document.getElementById(
+"chatList"
+);
+
+const plusBtn =
+document.getElementById(
+"plusBtn"
+);
+
+const imgInput =
+document.getElementById(
+"imgInput"
+);
+
+/* SAVE */
+
+function saveChats(){
+
+localStorage.setItem(
+"nexaris_chats",
+JSON.stringify(chats)
+);
+
+localStorage.setItem(
+"nexaris_current",
+currentChat
+);
+
+}
 
 /* RENDER */
 
@@ -266,10 +412,15 @@ function render(){
 
 chat.innerHTML = "";
 
-chats[currentChat].forEach(msg=>{
+const messages =
+chats[currentChat].messages;
+
+messages.forEach(msg=>{
 
 const div =
-document.createElement("div");
+document.createElement(
+"div"
+);
 
 div.className =
 msg.role === "user"
@@ -286,32 +437,165 @@ chat.appendChild(div);
 chat.scrollTop =
 chat.scrollHeight;
 
+renderChatList();
+
+}
+
+/* CHAT LIST */
+
+function renderChatList(){
+
+chatList.innerHTML = "";
+
+const search =
+document
+.getElementById("search")
+.value
+.toLowerCase();
+
+Object.keys(chats)
+.sort((a,b)=>
+chats[b].pinned -
+chats[a].pinned
+)
+.forEach(name=>{
+
+if(
+!name.toLowerCase()
+.includes(search)
+) return;
+
+const item =
+document.createElement(
+"div"
+);
+
+item.className =
+"chatItem";
+
+const left =
+document.createElement(
+"div"
+);
+
+left.innerHTML =
+(chats[name].pinned
+? "📌 "
+: "")
++ name;
+
+left.onclick = ()=>{
+
+currentChat = name;
+
+saveChats();
+
+render();
+
+};
+
+const del =
+document.createElement(
+"button"
+);
+
+del.className =
+"deleteBtn";
+
+del.innerText = "X";
+
+del.onclick = (e)=>{
+
+e.stopPropagation();
+
+delete chats[name];
+
+if(
+Object.keys(chats).length
+=== 0
+){
+
+chats["New Chat"] = {
+messages:[],
+pinned:false
+};
+
+}
+
+currentChat =
+Object.keys(chats)[0];
+
+saveChats();
+
+render();
+
+};
+
+item.oncontextmenu =
+(e)=>{
+
+e.preventDefault();
+
+chats[name].pinned =
+!chats[name].pinned;
+
+saveChats();
+
+renderChatList();
+
+};
+
+item.appendChild(left);
+
+item.appendChild(del);
+
+chatList.appendChild(item);
+
+});
+
 }
 
 /* NEW CHAT */
 
-function newChat(){
+document
+.getElementById(
+"newChatBtn"
+)
+.addEventListener(
+"click",
+()=>{
 
 const name =
-"Chat " +
-Object.keys(chats).length;
+"New Chat " +
+(
+Object.keys(chats)
+.length + 1
+);
 
-chats[name] = [];
+chats[name] = {
+messages:[],
+pinned:false
+};
 
 currentChat = name;
+
+saveChats();
 
 render();
 
 }
+);
 
-/* TOGGLE SIDEBAR */
+/* SIDEBAR TOGGLE */
 
 toggleBtn.addEventListener(
 "click",
 ()=>{
 
 const hidden =
-sidebar.classList.toggle("hidden");
+sidebar.classList.toggle(
+"hidden"
+);
 
 main.classList.toggle(
 "full",
@@ -319,17 +603,19 @@ hidden
 );
 
 toggleBtn.innerText =
-hidden ? "▶" : "◀";
+hidden
+? "▶"
+: "◀";
 
 toggleBtn.style.left =
 hidden
 ? "10px"
-: "230px";
+: "270px";
 
 }
 );
 
-/* SMART / FAST */
+/* MODE */
 
 modeBtn.addEventListener(
 "click",
@@ -348,11 +634,31 @@ mode === "smart"
 }
 );
 
-/* IMAGE */
+/* SEARCH */
 
 document
-.getElementById("imgInput")
+.getElementById(
+"search"
+)
 .addEventListener(
+"input",
+renderChatList
+);
+
+/* IMAGE BUTTON */
+
+plusBtn.addEventListener(
+"click",
+()=>{
+
+imgInput.click();
+
+}
+);
+
+/* IMAGE SELECT */
+
+imgInput.addEventListener(
 "change",
 (e)=>{
 
@@ -370,7 +676,9 @@ lastImageBase64 =
 reader.result;
 
 const preview =
-document.getElementById("preview");
+document.getElementById(
+"preview"
+);
 
 preview.src =
 lastImageBase64;
@@ -385,7 +693,34 @@ reader.readAsDataURL(file);
 }
 );
 
-/* SEND FUNCTION */
+/* AUTO NAME */
+
+function autoNameChat(text){
+
+if(
+currentChat.startsWith(
+"New Chat"
+)
+){
+
+const short =
+text
+.split(" ")
+.slice(0,4)
+.join(" ");
+
+chats[short] =
+chats[currentChat];
+
+delete chats[currentChat];
+
+currentChat = short;
+
+}
+
+}
+
+/* SEND */
 
 async function send(){
 
@@ -399,41 +734,57 @@ if(
 
 input.value = "";
 
+autoNameChat(text);
+
 let userMessage = text;
 
 if(lastImageBase64){
 
 userMessage +=
-"\n[User uploaded image for analysis]";
+"\n[User uploaded image]";
 
 }
 
-chats[currentChat].push({
+chats[currentChat]
+.messages
+.push({
+
 role:"user",
 content:userMessage
+
 });
 
 render();
+
+saveChats();
 
 const systemPrompt =
 mode === "smart"
 
 ? `You are Nexaris.
 
-You are intelligent, friendly,
-engaging, and helpful.
+You are intelligent,
+engaging,
+natural,
+friendly,
+and helpful.
 
 You can:
-- answer questions
-- explain science and math
+- chat naturally
+- explain science/math
 - help with coding
-- identify objects or fossils from images
+- identify images
+- identify fossils,
+objects, animals,
+rocks, plants,
+and technology
 
 Use emojis occasionally.`
 
 : `You are Nexaris.
 
-Respond quickly and concisely.`;
+Respond quickly
+and concisely.`;
 
 const messages = [
 
@@ -443,6 +794,7 @@ content:systemPrompt
 },
 
 ...chats[currentChat]
+.messages
 
 ];
 
@@ -469,7 +821,9 @@ await fetch(
 method:"POST",
 
 headers:{
-"Content-Type":"application/json",
+"Content-Type":
+"application/json",
+
 "Authorization":
 "Bearer " + API_KEY
 },
@@ -504,18 +858,27 @@ data?.error?.message
 
 "AI failed to respond.";
 
-chats[currentChat].push({
+chats[currentChat]
+.messages
+.push({
+
 role:"assistant",
 content:reply
+
 });
 
 render();
+
+saveChats();
 
 }catch(err){
 
 console.error(err);
 
-chats[currentChat].push({
+chats[currentChat]
+.messages
+.push({
+
 role:"assistant",
 content:"Connection error."
 });
@@ -523,6 +886,8 @@ content:"Connection error."
 render();
 
 }
+
+/* CLEAR IMAGE */
 
 lastImageBase64 = null;
 
