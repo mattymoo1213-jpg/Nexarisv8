@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -265,11 +265,12 @@ placeholder="Search chats..."
 ＋
 </button>
 
+<!-- FIXED IMAGE INPUT -->
+
 <input
 id="imgInput"
 type="file"
 accept="image/*"
-capture="environment"
 hidden
 />
 
@@ -288,7 +289,7 @@ Send
 
 <script>
 
-/* LOAD STORAGE */
+/* STORAGE */
 
 const savedChats =
 localStorage.getItem(
@@ -328,7 +329,7 @@ currentChat =
 /* API KEY */
 
 const API_KEY =
-"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";
+"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";
 
 /* MODE */
 
@@ -586,7 +587,7 @@ render();
 }
 );
 
-/* SIDEBAR TOGGLE */
+/* SIDEBAR */
 
 toggleBtn.addEventListener(
 "click",
@@ -693,7 +694,7 @@ reader.readAsDataURL(file);
 }
 );
 
-/* AUTO NAME */
+/* AUTO CHAT NAME */
 
 function autoNameChat(text){
 
@@ -764,19 +765,19 @@ mode === "smart"
 ? `You are Nexaris.
 
 You are intelligent,
-engaging,
 natural,
 friendly,
+engaging,
 and helpful.
 
 You can:
 - chat naturally
 - explain science/math
 - help with coding
-- identify images
+- identify uploaded images
 - identify fossils,
 objects, animals,
-rocks, plants,
+plants, rocks,
 and technology
 
 Use emojis occasionally.`
