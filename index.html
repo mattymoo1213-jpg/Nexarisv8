@@ -92,6 +92,23 @@ background:#111;
 color:white;
 border:1px solid #333;
 box-sizing:border-box;
+border-radius:8px;
+}
+
+/* PERSONALIZATION */
+
+#personaBox{
+width:100%;
+height:120px;
+padding:10px;
+margin-top:10px;
+background:#111;
+color:white;
+border:1px solid #333;
+box-sizing:border-box;
+border-radius:8px;
+resize:none;
+font-family:Arial;
 }
 
 /* CHAT LIST */
@@ -182,6 +199,7 @@ background:#111;
 color:white;
 border:1px solid #333;
 border-radius:10px;
+font-size:16px;
 }
 
 #sendBtn{
@@ -245,6 +263,17 @@ id="search"
 placeholder="Search chats..."
 />
 
+<textarea
+id="personaBox"
+placeholder="Personalization...
+
+Example:
+Be friendly 🙂
+Use emojis naturally.
+Talk casually.
+Call me Matthew sometimes."
+></textarea>
+
 <div id="chatList"></div>
 
 </div>
@@ -301,6 +330,11 @@ localStorage.getItem(
 "nexaris_current"
 );
 
+const savedPersona =
+localStorage.getItem(
+"nexaris_persona"
+) || "";
+
 let chats =
 savedChats
 ? JSON.parse(savedChats)
@@ -326,8 +360,11 @@ currentChat =
 
 /* API */
 
-const API_KEY =
+const GROQ_API_KEY =
 "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";
+
+const OPENROUTER_API_KEY =
+"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";
 
 /* MODE */
 
@@ -389,6 +426,14 @@ document.getElementById(
 "imgInput"
 );
 
+const personaBox =
+document.getElementById(
+"personaBox"
+);
+
+personaBox.value =
+savedPersona;
+
 /* SAVE */
 
 function saveChats(){
@@ -403,7 +448,19 @@ localStorage.setItem(
 currentChat
 );
 
+localStorage.setItem(
+"nexaris_persona",
+personaBox.value
+);
+
 }
+
+/* AUTO SAVE PERSONALITY */
+
+personaBox.addEventListener(
+"input",
+saveChats
+);
 
 /* RENDER */
 
@@ -765,6 +822,9 @@ chats[currentChat]
 
 render();
 
+const persona =
+personaBox.value || "";
+
 const systemPrompt =
 mode === "smart"
 
@@ -775,18 +835,21 @@ friendly,
 engaging,
 and helpful.
 
-You can:
-- chat naturally
-- explain science/math
-- help with coding
-- identify uploaded images
+Use emojis naturally 🙂
 
-Use emojis occasionally.`
+User personalization:
+${persona}
+
+You should follow the user's requested style closely.`
 
 : `You are Nexaris.
 
 Respond quickly
-and concisely.`;
+and concisely.
+
+User personalization:
+${persona}`;
+
 
 const messages = [
 
@@ -804,7 +867,66 @@ m=>!m.loading
 
 try{
 
-const response =
+let data = null;
+
+/* OPENROUTER FIRST */
+
+try{
+
+const openrouterResponse =
+await fetch(
+"https://openrouter.ai/api/v1/chat/completions",
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json",
+
+"Authorization":
+"Bearer " +
+OPENROUTER_API_KEY,
+
+"HTTP-Referer":
+"https://nexaris.ai",
+
+"X-Title":
+"Nexaris"
+},
+
+body:JSON.stringify({
+
+model:
+"deepseek/deepseek-chat-v3-0324:free",
+
+messages
+
+})
+
+}
+);
+
+data =
+await openrouterResponse.json();
+
+if(data.error){
+
+throw new Error(
+data.error.message
+);
+
+}
+
+}catch(openErr){
+
+console.log(
+"OpenRouter failed:",
+openErr
+);
+
+/* FALLBACK TO GROQ */
+
+const groqResponse =
 await fetch(
 "https://api.groq.com/openai/v1/chat/completions",
 {
@@ -815,7 +937,8 @@ headers:{
 "application/json",
 
 "Authorization":
-"Bearer " + API_KEY
+"Bearer " +
+GROQ_API_KEY
 },
 
 body:JSON.stringify({
@@ -830,10 +953,10 @@ messages
 }
 );
 
-const data =
-await response.json();
+data =
+await groqResponse.json();
 
-console.log(data);
+}
 
 /* REMOVE LOADING */
 
