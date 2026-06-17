@@ -6,7 +6,6 @@
 <title>Nexaris</title>
 
 <style>
-
 body{
 margin:0;
 font-family:Arial;
@@ -14,133 +13,41 @@ background:black;
 color:white;
 height:100vh;
 overflow:hidden;
+display:flex;
 }
 
 /* SIDEBAR */
-
 #sidebar{
-position:fixed;
-top:0;
-left:0;
 width:260px;
-height:100%;
 background:#111;
 padding:10px;
 box-sizing:border-box;
-overflow-y:auto;
-transition:transform .3s ease;
-z-index:20;
+display:flex;
+flex-direction:column;
 }
 
-#sidebar.hidden{
-transform:translateX(-100%);
+#chatList{
+flex:1;
+overflow-y:auto;
+margin-top:10px;
+}
+
+.chatItem{
+padding:8px;
+background:#1b1b1b;
+margin-bottom:6px;
+border-radius:6px;
+cursor:pointer;
 }
 
 /* MAIN */
-
 #main{
-position:absolute;
-left:260px;
-right:0;
-top:0;
-bottom:0;
+flex:1;
 display:flex;
 flex-direction:column;
-transition:left .3s ease;
 }
 
-#main.full{
-left:0;
-}
-
-/* TOGGLE */
-
-#toggleBtn{
-position:fixed;
-top:10px;
-left:270px;
-z-index:999;
-background:white;
-color:black;
-border:none;
-padding:6px 10px;
-border-radius:6px;
-cursor:pointer;
-transition:left .3s ease;
-}
-
-/* SIDEBAR BUTTONS */
-
-.sideBtn{
-width:100%;
-margin-top:8px;
-padding:10px;
-background:#222;
-color:white;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-/* SEARCH */
-
-#search{
-width:100%;
-padding:10px;
-margin-top:10px;
-background:#111;
-color:white;
-border:1px solid #333;
-box-sizing:border-box;
-border-radius:8px;
-}
-
-/* PERSONALIZATION */
-
-#personaBox{
-width:100%;
-height:120px;
-padding:10px;
-margin-top:10px;
-background:#111;
-color:white;
-border:1px solid #333;
-box-sizing:border-box;
-border-radius:8px;
-resize:none;
-font-family:Arial;
-}
-
-/* CHAT LIST */
-
-.chatItem{
-background:#1b1b1b;
-padding:8px;
-margin-top:6px;
-border-radius:6px;
-cursor:pointer;
-display:flex;
-justify-content:space-between;
-align-items:center;
-font-size:14px;
-}
-
-.chatItem:hover{
-background:#2b2b2b;
-}
-
-.deleteBtn{
-background:red;
-color:white;
-border:none;
-padding:3px 6px;
-border-radius:4px;
-cursor:pointer;
-font-size:12px;
-}
-
-/* CHAT */
-
+/* CHAT AREA */
 #chat{
 flex:1;
 overflow-y:auto;
@@ -150,46 +57,27 @@ flex-direction:column;
 gap:10px;
 }
 
-/* USER */
-
 .user{
 align-self:flex-end;
 background:#444;
 padding:10px;
 border-radius:14px;
 max-width:75%;
-word-wrap:break-word;
 }
-
-/* AI */
 
 .ai{
 align-self:flex-start;
+padding:10px;
 white-space:pre-wrap;
 max-width:100%;
-word-wrap:break-word;
 }
 
 /* INPUT */
-
 #inputArea{
 display:flex;
-align-items:center;
-gap:8px;
 padding:10px;
 border-top:1px solid #333;
-}
-
-#plusBtn{
-width:45px;
-height:45px;
-border-radius:50%;
-background:#222;
-color:white;
-font-size:26px;
-border:none;
-cursor:pointer;
-flex-shrink:0;
+gap:8px;
 }
 
 #input{
@@ -199,44 +87,19 @@ background:#111;
 color:white;
 border:1px solid #333;
 border-radius:10px;
-font-size:16px;
 }
 
-#sendBtn{
-padding:12px;
-background:white;
-color:black;
-border:none;
-border-radius:10px;
+button{
+padding:10px;
+border-radius:8px;
 cursor:pointer;
 }
 
-/* DISABLED */
-
-#sendBtn:disabled{
-opacity:0.5;
-cursor:not-allowed;
-}
-
-/* IMAGE */
-
-#imagePreviewContainer{
-padding-left:10px;
-padding-bottom:10px;
-}
-
-#preview{
-max-width:120px;
-border-radius:12px;
-display:none;
-border:1px solid #333;
-}
-
-/* LOADING */
-
-.loading{
-opacity:0.7;
-font-style:italic;
+/* HEADER */
+#topBar{
+padding:10px;
+border-bottom:1px solid #222;
+font-size:18px;
 }
 
 </style>
@@ -245,849 +108,145 @@ font-style:italic;
 <body>
 
 <div id="sidebar">
-
-<button
-class="sideBtn"
-id="newChatBtn">
-+ New Chat
-</button>
-
-<button
-class="sideBtn"
-id="modeBtn">
-Smart Mode 🧠
-</button>
-
-<input
-id="search"
-placeholder="Search chats..."
-/>
-
-<textarea
-id="personaBox"
-placeholder="Personalization...
-
-Example:
-Be friendly 🙂
-Use emojis naturally.
-Talk casually.
-Call me Matthew sometimes."
-></textarea>
-
+<div style="font-size:18px;">💬 Nexaris</div>
 <div id="chatList"></div>
-
 </div>
-
-<button id="toggleBtn">
-◀
-</button>
 
 <div id="main">
 
+<div id="topBar">Clean Mode 🤖</div>
+
 <div id="chat"></div>
 
-<div id="imagePreviewContainer">
-<img id="preview">
-</div>
-
 <div id="inputArea">
-
-<button id="plusBtn">
-＋
-</button>
-
-<input
-id="imgInput"
-type="file"
-accept="image/*"
-hidden
-/>
-
-<input
-id="input"
-placeholder="Message Nexaris..."
-/>
-
-<button id="sendBtn">
-Send
-</button>
-
+<input id="input" placeholder="Message Nexaris...">
+<button onclick="send()">Send</button>
 </div>
 
 </div>
 
 <script>
 
-/* STORAGE */
-
-const savedChats =
-localStorage.getItem(
-"nexaris_chats"
-);
-
-const savedCurrent =
-localStorage.getItem(
-"nexaris_current"
-);
-
-const savedPersona =
-localStorage.getItem(
-"nexaris_persona"
-) || "";
-
-let chats =
-savedChats
-? JSON.parse(savedChats)
-: {};
-
-let currentChat =
-savedCurrent || null;
-
-if(
-Object.keys(chats).length
-=== 0
-){
-
-chats["New Chat"] = {
-messages:[],
-pinned:false
-};
-
-currentChat =
-"New Chat";
-
-}
-
-/* API */
-
-const GROQ_API_KEY =
-"xai-25HUZg8AiPKlJCs6rjl9kOoVaQSPHiyAbqwVsOjDmrSIVBa2srotJZhdOJWzDZZ0VfFY4L68LAnuDTTh";
-
-const OPENROUTER_API_KEY =
-"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";
-
-/* MODE */
-
-let mode = "smart";
-
-/* IMAGE */
-
-let lastImageBase64 = null;
-
-/* ELEMENTS */
-
-const chat =
-document.getElementById(
-"chat"
-);
-
-const input =
-document.getElementById(
-"input"
-);
-
-const sendBtn =
-document.getElementById(
-"sendBtn"
-);
-
-const toggleBtn =
-document.getElementById(
-"toggleBtn"
-);
-
-const sidebar =
-document.getElementById(
-"sidebar"
-);
-
-const main =
-document.getElementById(
-"main"
-);
-
-const modeBtn =
-document.getElementById(
-"modeBtn"
-);
-
-const chatList =
-document.getElementById(
-"chatList"
-);
-
-const plusBtn =
-document.getElementById(
-"plusBtn"
-);
-
-const imgInput =
-document.getElementById(
-"imgInput"
-);
-
-const personaBox =
-document.getElementById(
-"personaBox"
-);
-
-personaBox.value =
-savedPersona;
-
-/* SAVE */
-
-function saveChats(){
-
-localStorage.setItem(
-"nexaris_chats",
-JSON.stringify(chats)
-);
-
-localStorage.setItem(
-"nexaris_current",
-currentChat
-);
-
-localStorage.setItem(
-"nexaris_persona",
-personaBox.value
-);
-
-}
-
-/* AUTO SAVE PERSONALITY */
-
-personaBox.addEventListener(
-"input",
-saveChats
-);
-
-/* RENDER */
-
-function render(){
-
-chat.innerHTML = "";
-
-const messages =
-chats[currentChat].messages;
-
-messages.forEach(msg=>{
-
-const div =
-document.createElement(
-"div"
-);
-
-div.className =
-msg.role === "user"
-? "user"
-: "ai";
-
-if(msg.loading){
-
-div.classList.add(
-"loading"
-);
-
-}
-
-div.textContent =
-msg.content;
-
-chat.appendChild(div);
-
-});
-
-chat.scrollTop =
-chat.scrollHeight;
-
-renderChatList();
-
-}
-
-/* CHAT LIST */
-
-function renderChatList(){
-
-chatList.innerHTML = "";
-
-const search =
-document
-.getElementById("search")
-.value
-.toLowerCase();
-
-Object.keys(chats)
-.sort((a,b)=>
-chats[b].pinned -
-chats[a].pinned
-)
-.forEach(name=>{
-
-if(
-!name.toLowerCase()
-.includes(search)
-) return;
-
-const item =
-document.createElement(
-"div"
-);
-
-item.className =
-"chatItem";
-
-const left =
-document.createElement(
-"div"
-);
-
-left.innerHTML =
-(chats[name].pinned
-? "📌 "
-: "")
-+ name;
-
-left.onclick = ()=>{
-
-currentChat = name;
-
-saveChats();
-
-render();
-
-};
-
-const del =
-document.createElement(
-"button"
-);
-
-del.className =
-"deleteBtn";
-
-del.innerText = "X";
-
-del.onclick = (e)=>{
-
-e.stopPropagation();
-
-delete chats[name];
-
-if(
-Object.keys(chats).length
-=== 0
-){
-
-chats["New Chat"] = {
-messages:[],
-pinned:false
-};
-
-}
-
-currentChat =
-Object.keys(chats)[0];
-
-saveChats();
-
-render();
-
-};
-
-item.appendChild(left);
-
-item.appendChild(del);
-
-chatList.appendChild(item);
-
-});
-
-}
-
-/* NEW CHAT */
-
-document
-.getElementById(
-"newChatBtn"
-)
-.addEventListener(
-"click",
-()=>{
-
-const name =
-"New Chat " +
-(
-Object.keys(chats)
-.length + 1
-);
-
-chats[name] = {
-messages:[],
-pinned:false
-};
-
-currentChat = name;
-
-saveChats();
-
-render();
-
-}
-);
-
-/* TOGGLE */
-
-toggleBtn.addEventListener(
-"click",
-()=>{
-
-const hidden =
-sidebar.classList.toggle(
-"hidden"
-);
-
-main.classList.toggle(
-"full",
-hidden
-);
-
-toggleBtn.innerText =
-hidden
-? "▶"
-: "◀";
-
-toggleBtn.style.left =
-hidden
-? "10px"
-: "270px";
-
-}
-);
-
-/* MODE */
-
-modeBtn.addEventListener(
-"click",
-()=>{
-
-mode =
-mode === "smart"
-? "fast"
-: "smart";
-
-modeBtn.innerText =
-mode === "smart"
-? "Smart Mode 🧠"
-: "Fast Mode ⚡";
-
-}
-);
-
-/* SEARCH */
-
-document
-.getElementById(
-"search"
-)
-.addEventListener(
-"input",
-renderChatList
-);
-
-/* IMAGE */
-
-plusBtn.addEventListener(
-"click",
-()=>{
-
-imgInput.click();
-
-}
-);
-
-imgInput.addEventListener(
-"change",
-(e)=>{
-
-const file =
-e.target.files[0];
-
-if(!file) return;
-
-const reader =
-new FileReader();
-
-reader.onload = ()=>{
-
-lastImageBase64 =
-reader.result;
-
-const preview =
-document.getElementById(
-"preview"
-);
-
-preview.src =
-lastImageBase64;
-
-preview.style.display =
-"block";
-
-};
-
-reader.readAsDataURL(file);
-
-}
-);
-
-/* AUTO NAME */
-
-function autoNameChat(text){
-
-if(
-currentChat.startsWith(
-"New Chat"
-)
-){
-
-const short =
-text
-.split(" ")
-.slice(0,4)
-.join(" ");
-
-chats[short] =
-chats[currentChat];
-
-delete chats[currentChat];
-
-currentChat = short;
-
-}
-
-}
-
-/* SEND */
-
-async function send(){
-
-const text =
-input.value.trim();
-
-if(
-!text &&
-!lastImageBase64
-) return;
-
-sendBtn.disabled = true;
-
-input.value = "";
-
-autoNameChat(text);
-
-let userMessage = text;
-
-if(lastImageBase64){
-
-userMessage +=
-"\n[User uploaded image]";
-
-}
-
-chats[currentChat]
-.messages
-.push({
-
-role:"user",
-content:userMessage
-
-});
-
-render();
-
-saveChats();
-
-/* LOADING MESSAGE */
-
-const loadingMessage = {
-role:"assistant",
-content:"Nexaris is thinking... ⚡",
-loading:true
-};
-
-chats[currentChat]
-.messages
-.push(loadingMessage);
-
-render();
-
-const persona =
-personaBox.value || "";
-
-const systemPrompt =
-mode === "smart"
-
-? `You are Nexaris.
-
-You are intelligent,
-friendly,
-engaging,
-and helpful.
-
-Use emojis naturally 🙂
-
-User personalization:
-${persona}
-
-You should follow the user's requested style closely.`
-
-: `You are Nexaris.
-
-Respond quickly
-and concisely.
-
-User personalization:
-${persona}`;
-
-
-const messages = [
-
+/* 🔑 API KEYS */
+const GEMINI_KEY = "curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent" \
+  -H 'Content-Type: application/json' \
+  -H 'X-goog-api-key: AQ.Ab8RN6Iuxe2-qJcDpPDv3APqjTdWF5f3LZALfV7SDien_LPlJQ' \
+  -X POST \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {
+            "text": "Explain how AI works in a few words"
+          }
+        ]
+      }
+    ]
+  }'";
+const OPENROUTER_KEY = "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";
+
+/* 💬 MEMORY */
+let messages = [];
+
+/* 🧠 GEMINI */
+async function askGemini(msgs){
+try{
+const res = await fetch(
+`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
 {
-role:"system",
-content:systemPrompt
-},
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+contents: msgs.map(m=>({
+role: m.role==="user"?"user":"model",
+parts:[{text:m.content}]
+}))
+})
+}
+);
 
-...chats[currentChat]
-.messages.filter(
-m=>!m.loading
-)
+const data = await res.json();
+return data?.candidates?.[0]?.content?.parts?.[0]?.text;
+}catch(e){
+return null;
+}
+}
 
-];
-
+/* 🌐 OPENROUTER */
+async function askOpenRouter(msgs){
 try{
-
-let data = null;
-
-/* OPENROUTER FIRST */
-
-try{
-
-const openrouterResponse =
-await fetch(
+const res = await fetch(
 "https://openrouter.ai/api/v1/chat/completions",
 {
 method:"POST",
-
 headers:{
-"Content-Type":
-"application/json",
-
-"Authorization":
-"Bearer " +
-OPENROUTER_API_KEY,
-
-"HTTP-Referer":
-"https://nexaris.ai",
-
-"X-Title":
-"Nexaris"
+"Authorization":"Bearer " + OPENROUTER_KEY,
+"Content-Type":"application/json"
 },
-
 body:JSON.stringify({
-
-model:
-"deepseek/deepseek-chat-v3-0324:free",
-
-messages
-
+model:"meta-llama/llama-3.1-8b-instruct",
+messages:msgs
 })
-
 }
 );
 
-data =
-await openrouterResponse.json();
-
-if(data.error){
-
-throw new Error(
-data.error.message
-);
-
+const data = await res.json();
+return data?.choices?.[0]?.message?.content;
+}catch(e){
+return null;
+}
 }
 
-}catch(openErr){
+/* 🤖 ROUTER */
+async function getAI(){
 
-console.log(
-"OpenRouter failed:",
-openErr
-);
+let r = await askGemini(messages);
+if(r) return "🧠 Gemini:\n" + r;
 
-/* FALLBACK TO GROQ */
+r = await askOpenRouter(messages);
+if(r) return "🌐 OpenRouter:\n" + r;
 
-const groqResponse =
-await fetch(
-"https://api.groq.com/openai/v1/chat/completions",
-{
-method:"POST",
-
-headers:{
-"Content-Type":
-"application/json",
-
-"Authorization":
-"Bearer " +
-GROQ_API_KEY
-},
-
-body:JSON.stringify({
-
-model:
-"llama-3.1-8b-instant",
-
-messages
-
-})
-
-}
-);
-
-data =
-await groqResponse.json();
-
+return "⚠️ Both AI systems failed.";
 }
 
-/* REMOVE LOADING */
+/* 💬 SEND */
+async function send(){
 
-chats[currentChat]
-.messages =
-chats[currentChat]
-.messages.filter(
-m=>!m.loading
-);
+const input = document.getElementById("input");
+const text = input.value.trim();
+if(!text) return;
 
-let reply = "";
+input.value="";
 
-if(
-data?.choices?.[0]
-?.message?.content
-){
-
-reply =
-data.choices[0]
-.message.content;
-
-}
-
-else if(
-data?.error?.message
-){
-
-const err =
-data.error.message;
-
-if(
-err.toLowerCase()
-.includes("token")
-||
-err.toLowerCase()
-.includes("rate")
-){
-
-reply =
-"⏳ Nexaris is temporarily busy. Wait a few seconds and try again.";
-
-}else{
-
-reply =
-"⚠️ " + err;
-
-}
-
-}else{
-
-reply =
-"⚠️ AI failed to respond.";
-
-}
-
-chats[currentChat]
-.messages
-.push({
-
-role:"assistant",
-content:reply
-
-});
+messages.push({role:"user",content:text});
 
 render();
 
-saveChats();
-
-}catch(err){
-
-console.error(err);
-
-chats[currentChat]
-.messages =
-chats[currentChat]
-.messages.filter(
-m=>!m.loading
-);
-
-chats[currentChat]
-.messages
-.push({
-
-role:"assistant",
-
-content:
-"⚠️ Connection error."
-
-});
-
+messages.push({role:"assistant",content:"Thinking..."});
 render();
 
-}
+const reply = await getAI();
 
-/* RESET */
-
-sendBtn.disabled = false;
-
-lastImageBase64 = null;
-
-document.getElementById(
-"preview"
-).style.display = "none";
-
-}
-
-/* SEND BUTTON */
-
-sendBtn.addEventListener(
-"click",
-send
-);
-
-/* ENTER */
-
-input.addEventListener(
-"keydown",
-(e)=>{
-
-if(
-e.key === "Enter"
-){
-
-send();
-
-}
-
-}
-);
+messages[messages.length-1].content = reply;
 
 render();
+}
+
+/* 🖥️ RENDER */
+function render(){
+
+const chat = document.getElementById("chat");
+chat.innerHTML="";
+
+for(const m of messages){
+const div=document.createElement("div");
+div.className = m.role==="user"?"user":"ai";
+div.textContent=m.content;
+chat.appendChild(div);
+}
+
+chat.scrollTop = chat.scrollHeight;
+}
 
 </script>
 
