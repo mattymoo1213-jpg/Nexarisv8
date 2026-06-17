@@ -12,8 +12,8 @@ font-family:Arial;
 background:black;
 color:white;
 height:100vh;
-overflow:hidden;
 display:flex;
+overflow:hidden;
 }
 
 /* SIDEBAR */
@@ -24,20 +24,26 @@ padding:10px;
 box-sizing:border-box;
 display:flex;
 flex-direction:column;
+transition:width 0.3s ease;
 }
 
+#sidebar.collapsed{
+width:60px;
+}
+
+#toggleSidebar{
+background:#222;
+color:white;
+border:none;
+padding:8px;
+cursor:pointer;
+margin-bottom:10px;
+}
+
+/* CHAT LIST */
 #chatList{
 flex:1;
 overflow-y:auto;
-margin-top:10px;
-}
-
-.chatItem{
-padding:8px;
-background:#1b1b1b;
-margin-bottom:6px;
-border-radius:6px;
-cursor:pointer;
 }
 
 /* MAIN */
@@ -47,7 +53,7 @@ display:flex;
 flex-direction:column;
 }
 
-/* CHAT AREA */
+/* CHAT */
 #chat{
 flex:1;
 overflow-y:auto;
@@ -91,15 +97,8 @@ border-radius:10px;
 
 button{
 padding:10px;
-border-radius:8px;
 cursor:pointer;
-}
-
-/* HEADER */
-#topBar{
-padding:10px;
-border-bottom:1px solid #222;
-font-size:18px;
+border-radius:8px;
 }
 
 </style>
@@ -108,44 +107,30 @@ font-size:18px;
 <body>
 
 <div id="sidebar">
-<div style="font-size:18px;">💬 Nexaris</div>
+
+<button id="toggleSidebar">☰</button>
 <div id="chatList"></div>
+
 </div>
 
 <div id="main">
-
-<div id="topBar">Clean Mode 🤖</div>
 
 <div id="chat"></div>
 
 <div id="inputArea">
 <input id="input" placeholder="Message Nexaris...">
-<button onclick="send()">Send</button>
+<button id="sendBtn">Send</button>
 </div>
 
 </div>
 
 <script>
 
-/* 🔑 API KEYS */
-const GEMINI_KEY = "curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent" \
-  -H 'Content-Type: application/json' \
-  -H 'X-goog-api-key: AQ.Ab8RN6Iuxe2-qJcDpPDv3APqjTdWF5f3LZALfV7SDien_LPlJQ' \
-  -X POST \
-  -d '{
-    "contents": [
-      {
-        "parts": [
-          {
-            "text": "Explain how AI works in a few words"
-          }
-        ]
-      }
-    ]
-  }'";
+/* 🔑 KEYS */
+const GEMINI_KEY = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 const OPENROUTER_KEY = "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";
 
-/* 💬 MEMORY */
+/* 💬 CHAT */
 let messages = [];
 
 /* 🧠 GEMINI */
@@ -199,7 +184,6 @@ return null;
 
 /* 🤖 ROUTER */
 async function getAI(){
-
 let r = await askGemini(messages);
 if(r) return "🧠 Gemini:\n" + r;
 
@@ -219,7 +203,6 @@ if(!text) return;
 input.value="";
 
 messages.push({role:"user",content:text});
-
 render();
 
 messages.push({role:"assistant",content:"Thinking..."});
@@ -240,13 +223,28 @@ chat.innerHTML="";
 
 for(const m of messages){
 const div=document.createElement("div");
-div.className = m.role==="user"?"user":"ai";
+div.className=m.role==="user"?"user":"ai";
 div.textContent=m.content;
 chat.appendChild(div);
 }
 
-chat.scrollTop = chat.scrollHeight;
+chat.scrollTop=chat.scrollHeight;
 }
+
+/* 🎛️ CONTROLS */
+document.addEventListener("DOMContentLoaded", () => {
+
+document.getElementById("sendBtn").addEventListener("click", send);
+
+document.getElementById("input").addEventListener("keydown", (e)=>{
+if(e.key==="Enter") send();
+});
+
+document.getElementById("toggleSidebar").addEventListener("click", ()=>{
+document.getElementById("sidebar").classList.toggle("collapsed");
+});
+
+});
 
 </script>
 
