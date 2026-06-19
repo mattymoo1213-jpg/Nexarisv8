@@ -6,7 +6,6 @@
 <title>Nexaris</title>
 
 <style>
-
 body{
 margin:0;
 font-family:Arial;
@@ -17,7 +16,6 @@ overflow:hidden;
 }
 
 /* SIDEBAR */
-
 #sidebar{
 position:fixed;
 top:0;
@@ -37,7 +35,6 @@ transform:translateX(-100%);
 }
 
 /* MAIN */
-
 #main{
 position:absolute;
 left:260px;
@@ -54,7 +51,6 @@ left:0;
 }
 
 /* TOGGLE */
-
 #toggleBtn{
 position:fixed;
 top:10px;
@@ -66,11 +62,9 @@ border:none;
 padding:6px 10px;
 border-radius:6px;
 cursor:pointer;
-transition:left .3s ease;
 }
 
-/* SIDEBAR BUTTONS */
-
+/* BUTTONS */
 .sideBtn{
 width:100%;
 margin-top:8px;
@@ -83,7 +77,6 @@ cursor:pointer;
 }
 
 /* SEARCH */
-
 #search{
 width:100%;
 padding:10px;
@@ -95,7 +88,6 @@ box-sizing:border-box;
 }
 
 /* CHAT LIST */
-
 .chatItem{
 background:#1b1b1b;
 padding:8px;
@@ -123,7 +115,6 @@ font-size:12px;
 }
 
 /* CHAT */
-
 #chat{
 flex:1;
 overflow-y:auto;
@@ -134,7 +125,6 @@ gap:10px;
 }
 
 /* USER */
-
 .user{
 align-self:flex-end;
 background:#444;
@@ -145,7 +135,6 @@ word-wrap:break-word;
 }
 
 /* AI */
-
 .ai{
 align-self:flex-start;
 white-space:pre-wrap;
@@ -154,10 +143,8 @@ word-wrap:break-word;
 }
 
 /* INPUT */
-
 #inputArea{
 display:flex;
-align-items:center;
 gap:8px;
 padding:10px;
 border-top:1px solid #333;
@@ -169,10 +156,9 @@ height:45px;
 border-radius:50%;
 background:#222;
 color:white;
-font-size:26px;
 border:none;
+font-size:26px;
 cursor:pointer;
-flex-shrink:0;
 }
 
 #input{
@@ -195,44 +181,17 @@ cursor:pointer;
 
 #sendBtn:disabled{
 opacity:0.5;
-cursor:not-allowed;
 }
-
-/* IMAGE */
-
-#imagePreviewContainer{
-padding-left:10px;
-padding-bottom:10px;
-}
-
-#preview{
-max-width:120px;
-border-radius:12px;
-display:none;
-border:1px solid #333;
-}
-
-/* LOADING */
-
-.loading{
-opacity:0.7;
-font-style:italic;
-}
-
 </style>
 </head>
 
 <body>
 
 <div id="sidebar">
-
 <button class="sideBtn" id="newChatBtn">+ New Chat</button>
 <button class="sideBtn" id="modeBtn">Smart Mode 🧠</button>
-
 <input id="search" placeholder="Search chats...">
-
 <div id="chatList"></div>
-
 </div>
 
 <button id="toggleBtn">◀</button>
@@ -241,20 +200,11 @@ font-style:italic;
 
 <div id="chat"></div>
 
-<div id="imagePreviewContainer">
-<img id="preview">
-</div>
-
 <div id="inputArea">
-
 <button id="plusBtn">＋</button>
-
 <input id="imgInput" type="file" accept="image/*" hidden>
-
 <input id="input" placeholder="Message Nexaris...">
-
 <button id="sendBtn">Send</button>
-
 </div>
 
 </div>
@@ -262,218 +212,168 @@ font-style:italic;
 <script>
 
 /* =========================
-   ORIGINAL STORAGE SYSTEM
+   SAFETY DEBUG
 ========================= */
-
-const savedChats = localStorage.getItem("nexaris_chats");
-const savedCurrent = localStorage.getItem("nexaris_current");
-
-let chats = savedChats ? JSON.parse(savedChats) : {};
-let currentChat = savedCurrent || null;
-
-if(Object.keys(chats).length === 0){
-chats["New Chat"] = {messages:[],pinned:false};
-currentChat = "New Chat";
-}
+window.onerror = (m)=>console.log("JS ERROR:",m);
 
 /* =========================
-   MODE + IMAGE
+   STORAGE
 ========================= */
-
-let mode = "smart";
-let lastImageBase64 = null;
-
-/* =========================
-   FIX: MULTI AI KEYS
-========================= */
-
-const GROQ_KEY = "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";
-const OPENROUTER_KEY = "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";
-const GEMINI_KEY = "AQ.Ab8RN6JfLt6rGZ0c0GpDOQGJA5FK_P-ZFn07cqAEpmWX_ID-aw";
-
-/* =========================
-   ELEMENTS
-========================= */
-
-const chat = document.getElementById("chat");
-const input = document.getElementById("input");
-const sendBtn = document.getElementById("sendBtn");
-const toggleBtn = document.getElementById("toggleBtn");
-const sidebar = document.getElementById("sidebar");
-const main = document.getElementById("main");
-const modeBtn = document.getElementById("modeBtn");
-const chatList = document.getElementById("chatList");
-const plusBtn = document.getElementById("plusBtn");
-const imgInput = document.getElementById("imgInput");
-
-/* =========================
-   SAVE SYSTEM
-========================= */
-
-function saveChats(){
-localStorage.setItem("nexaris_chats",JSON.stringify(chats));
-localStorage.setItem("nexaris_current",currentChat);
-}
-
-/* =========================
-   AI FIX (GROQ)
-========================= */
-
-async function callGroq(messages){
-try{
-const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Authorization":"Bearer " + GROQ_KEY
-},
-body:JSON.stringify({
-model:"llama-3.1-8b-instant",
-messages
-})
-});
-
-const data = await res.json();
-return data?.choices?.[0]?.message?.content || null;
-}catch{return null;}
-}
-
-/* =========================
-   AI FIX (OPENROUTER)
-========================= */
-
-async function callOpenRouter(messages){
-try{
-const res = await fetch("https://openrouter.ai/api/v1/chat/completions",{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Authorization":"Bearer " + OPENROUTER_KEY
-},
-body:JSON.stringify({
-model:"meta-llama/llama-3.1-8b-instruct",
-messages
-})
-});
-
-const data = await res.json();
-return data?.choices?.[0]?.message?.content || null;
-}catch{return null;}
-}
-
-/* =========================
-   AI FIX (GEMINI)
-========================= */
-
-async function callGemini(messages){
-try{
-const res = await fetch(
-`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
-{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-contents: messages.map(m=>({
-role:m.role==="user"?"user":"model",
-parts:[{text:m.content}]
-}))
-})
-}
-);
-
-const data = await res.json();
-return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
-}catch{return null;}
-}
-
-/* =========================
-   FIXED FALLBACK CHAIN
-========================= */
-
-async function askAI(messages){
-
-let reply = await callGroq(messages);
-let source = "Groq";
-
-if(!reply){
-reply = await callOpenRouter(messages);
-source = "OpenRouter";
-}
-
-if(!reply){
-reply = await callGemini(messages);
-source = "Gemini";
-}
-
-if(!reply){
-return {
-text:"⚠️ All AI systems failed.",
-source:"Error"
-};
-}
-
-return {
-text:reply,
-source
-};
-
-}
-
-/* =========================
-   RENDER SYSTEM
-========================= */
-
-function render(){
-chat.innerHTML="";
-
-for(const msg of chats[currentChat].messages){
-const div=document.createElement("div");
-div.className=msg.role==="user"?"user":"ai";
-
-if(msg.loading) div.classList.add("loading");
-
-div.textContent=msg.content;
-chat.appendChild(div);
-}
-
-chat.scrollTop=chat.scrollHeight;
-renderChatList();
-}
-
-/* =========================
-   CHAT LIST
-========================= */
-
-function renderChatList(){
-chatList.innerHTML="";
-
-Object.keys(chats).forEach(name=>{
-const div=document.createElement("div");
-div.className="chatItem";
-
-div.innerHTML=name;
-
-div.onclick=()=>{
-currentChat=name;
-saveChats();
-render();
-};
-
-const del=document.createElement("button");
-del.textContent="X";
-del.className="deleteBtn";
-
-del.onclick=(e)=>{
-e.stopPropagation();
-delete chats[name];
+let chats = JSON.parse(localStorage.getItem("nexaris_chats")||"{}");
+let currentChat = localStorage.getItem("nexaris_current");
 
 if(Object.keys(chats).length===0){
 chats["New Chat"]={messages:[],pinned:false};
 currentChat="New Chat";
 }
 
+/* =========================
+   MODE
+========================= */
+let mode="smart";
+let lastImageBase64=null;
+
+/* =========================
+   API KEYS
+========================= */
+const GROQ_KEY="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";
+const OPENROUTER_KEY="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";
+const GEMINI_KEY="AQ.Ab8RN6Li8Xq67CHOV7aDzAY2UPDdVWO7S3EatwcLpp_SwNqRvQ";
+
+/* =========================
+   ELEMENTS
+========================= */
+const chat=document.getElementById("chat");
+const input=document.getElementById("input");
+const sendBtn=document.getElementById("sendBtn");
+const sidebar=document.getElementById("sidebar");
+const main=document.getElementById("main");
+const chatList=document.getElementById("chatList");
+
+/* =========================
+   SAVE
+========================= */
+function save(){
+localStorage.setItem("nexaris_chats",JSON.stringify(chats));
+localStorage.setItem("nexaris_current",currentChat);
+}
+
+/* =========================
+   AI LAYERS
+========================= */
+async function groq(messages){
+try{
+let r=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer "+GROQ_KEY
+},
+body:JSON.stringify({
+model:"llama-3.1-8b-instant",
+messages
+})
+});
+let d=await r.json();
+return d?.choices?.[0]?.message?.content||null;
+}catch{return null;}
+}
+
+async function openrouter(messages){
+try{
+let r=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer "+OPENROUTER_KEY
+},
+body:JSON.stringify({
+model:"meta-llama/llama-3.1-8b-instruct",
+messages
+})
+});
+let d=await r.json();
+return d?.choices?.[0]?.message?.content||null;
+}catch{return null;}
+}
+
+async function gemini(messages){
+try{
+let r=await fetch(
+`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+contents:messages.map(m=>({
+role:m.role==="user"?"user":"model",
+parts:[{text:m.content}]
+}))
+})
+}
+);
+let d=await r.json();
+return d?.candidates?.[0]?.content?.parts?.[0]?.text||null;
+}catch{return null;}
+}
+
+/* =========================
+   FALLBACK ENGINE
+========================= */
+async function askAI(messages){
+
+let r=await groq(messages);
+if(r) return {text:r,source:"Groq"};
+
+r=await openrouter(messages);
+if(r) return {text:r,source:"OpenRouter"};
+
+r=await gemini(messages);
+if(r) return {text:r,source:"Gemini"};
+
+return {text:"All AI failed.",source:"Error"};
+
+}
+
+/* =========================
+   RENDER
+========================= */
+function render(){
+chat.innerHTML="";
+for(let m of chats[currentChat].messages){
+let d=document.createElement("div");
+d.className=m.role==="user"?"user":"ai";
+d.textContent=m.content;
+chat.appendChild(d);
+}
+chat.scrollTop=chat.scrollHeight;
+}
+
+/* =========================
+   CHAT LIST
+========================= */
+function renderList(){
+chatList.innerHTML="";
+Object.keys(chats).forEach(n=>{
+let div=document.createElement("div");
+div.className="chatItem";
+div.textContent=n;
+
+div.onclick=()=>{
+currentChat=n;
+save();
+render();
+};
+
+let del=document.createElement("button");
+del.textContent="X";
+del.className="deleteBtn";
+
+del.onclick=(e)=>{
+e.stopPropagation();
+delete chats[n];
 currentChat=Object.keys(chats)[0];
-saveChats();
+save();
 render();
 };
 
@@ -483,83 +383,42 @@ chatList.appendChild(div);
 }
 
 /* =========================
-   IMAGE UPLOAD
+   SEND (SAFE)
 ========================= */
-
-plusBtn.onclick=()=>imgInput.click();
-
-imgInput.onchange=(e)=>{
-const file=e.target.files[0];
-if(!file) return;
-
-const reader=new FileReader();
-reader.onload=()=>{
-lastImageBase64=reader.result;
-document.getElementById("preview").src=lastImageBase64;
-document.getElementById("preview").style.display="block";
-};
-reader.readAsDataURL(file);
-};
-
-/* =========================
-   SEND (FIXED ONLY PART)
-========================= */
-
 async function send(){
 
-const text=input.value.trim();
+let text=input.value.trim();
 if(!text && !lastImageBase64) return;
 
 sendBtn.disabled=true;
-
 input.value="";
 
-chats[currentChat].messages.push({
-role:"user",
-content:text + (lastImageBase64 ? "\n[Image attached]" : "")
-});
-
+chats[currentChat].messages.push({role:"user",content:text});
 render();
-saveChats();
+save();
 
-/* loading */
 chats[currentChat].messages.push({
 role:"assistant",
-content:"Nexaris is thinking... ⚡",
-loading:true
+content:"Thinking..."
 });
-
 render();
 
-const systemPrompt =
-mode==="smart"
-? "You are Nexaris. Be helpful and smart."
-: "Be short.";
-
-const messages=[
-{role:"system",content:systemPrompt},
-...chats[currentChat].messages.filter(m=>!m.loading)
+let messages=[
+{role:"system",content:"You are Nexaris."},
+...chats[currentChat].messages
 ];
 
-/* AI CALL (FIXED) */
-const result = await askAI(messages);
+let res=await askAI(messages);
 
-/* remove loading */
-chats[currentChat].messages =
-chats[currentChat].messages.filter(m=>!m.loading);
+chats[currentChat].messages.pop();
 
-/* push result */
 chats[currentChat].messages.push({
 role:"assistant",
-content:"🧠 " + result.source + "\n\n" + result.text
+content:"🧠 "+res.source+"\n\n"+res.text
 });
 
-saveChats();
+save();
 render();
-
-/* reset image */
-lastImageBase64=null;
-document.getElementById("preview").style.display="none";
 
 sendBtn.disabled=false;
 }
@@ -567,15 +426,14 @@ sendBtn.disabled=false;
 /* =========================
    EVENTS
 ========================= */
-
 document.getElementById("sendBtn").onclick=send;
 
 input.addEventListener("keydown",(e)=>{
-if(e.key==="Enter") send();
+if(e.key==="Enter")send();
 });
 
 render();
-renderChatList();
+renderList();
 
 </script>
 
